@@ -36,6 +36,9 @@ export default function Home() {
   const [result, setResult] = useState<AnalyzeResult | null>(null);
   const [openSectionId, setOpenSectionId] = useState<string | null>('resumen');
 
+  const [customerEmail, setCustomerEmail] = useState<string>('');
+  const [isPaying, setIsPaying] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const hasFile = !!selectedFile;
@@ -111,6 +114,40 @@ export default function Home() {
     setOpenSectionId((current) => (current === id ? null : id));
   };
 
+  const handleCheckoutSingle = async () => {
+    if (!customerEmail.trim()) {
+      setStatus('Escribe tu correo para iniciar el pago del análisis.');
+      return;
+    }
+
+    try {
+      setIsPaying(true);
+      setStatus('Creando sesión de pago segura…');
+
+      const res = await fetch('/api/checkout/single', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customerEmail: customerEmail.trim() }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.url) {
+        console.error('Stripe error:', data);
+        setStatus(data.error || 'No se pudo iniciar el pago. Intenta de nuevo.');
+        return;
+      }
+
+      // Redirigir a Stripe Checkout
+      window.location.href = data.url;
+    } catch (error) {
+      console.error(error);
+      setStatus('Error de red al conectar con Stripe.');
+    } finally {
+      setIsPaying(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
       {/* HERO */}
@@ -149,68 +186,100 @@ export default function Home() {
             </p>
 
             {/* Controles */}
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center gap-3">
-                {/* Botón seleccionar archivo */}
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-2 rounded-full px-5 py-2 
-                    text-sm font-semibold text-white 
-                    bg-gradient-to-r from-fuchsia-500 via-purple-500 to-cyan-300
-                    shadow-lg shadow-purple-500/20 hover:opacity-90 transition"
-                >
-                  Subir chat (.txt)
-                </button>
+            <div className="space-y-4">
+              {/* Bloque de pago */}
+              <div className="rounded-2xl border border-emerald-500/30 bg-slate-950/50 p-4">
+                <p className="text-xs font-semibold text-emerald-300">
+                  Paso 0 · Desbloquea tu análisis completo
+                </p>
+                <p className="mt-1 text-xs text-slate-300">
+                  Paga un análisis profundo de un chat. Después de pagar, subes tu archivo .txt y
+                  obtienes el reporte completo + chat con la IA.
+                </p>
 
-                {/* input real oculto */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".txt"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
-
-                {/* Botón de analizar */}
-                <button
-                  type="button"
-                  onClick={handleUpload}
-                  disabled={isUploading || !hasFile}
-                  className={`inline-flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-semibold shadow-md shadow-slate-900/40 transition
-                    ${
-                      hasFile
-                        ? 'border-emerald-500/60 bg-emerald-500 text-slate-950 hover:bg-emerald-400'
-                        : 'border-slate-600 bg-slate-900/60 text-slate-100 hover:bg-slate-800'
-                    }
-                    disabled:cursor-not-allowed disabled:opacity-60`}
-                >
-                  {isUploading ? 'Analizando…' : 'Generar reporte'}
-                  <span className="rounded-full bg-slate-800/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
-                    Listo en 5 segundos
-                  </span>
-                </button>
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <input
+                    type="email"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    placeholder="Tu correo (para recibo y soporte)"
+                    className="flex-1 rounded-full border border-slate-700 bg-slate-900/80 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCheckoutSingle}
+                    disabled={isPaying}
+                    className="inline-flex items-center justify-center rounded-full bg-emerald-500 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isPaying ? 'Redirigiendo a pago…' : 'Pagar análisis · MX$49'}
+                  </button>
+                </div>
               </div>
 
-              {/* link guía rápida */}
-              <p className="text-xs text-slate-400">
-                ¿No sabes cómo exportar tu chat de WhatsApp?{' '}
-                <button
-                  type="button"
-                  onClick={scrollToGuide}
-                  className="font-semibold text-emerald-300 hover:text-emerald-200"
-                >
-                  Ver guía rápida
-                </button>
-              </p>
+              {/* Controles de archivo */}
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Botón seleccionar archivo */}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex items-center gap-2 rounded-full px-5 py-2 
+                      text-sm font-semibold text-white 
+                      bg-gradient-to-r from-fuchsia-500 via-purple-500 to-cyan-300
+                      shadow-lg shadow-purple-500/20 hover:opacity-90 transition"
+                  >
+                    Subir chat (.txt)
+                  </button>
 
-              {/* estado del uploader */}
-              {status && (
-                <p className="flex items-center gap-2 text-[13px] text-slate-200">
-                  <span className="text-emerald-300">▸</span>
-                  {status}
+                  {/* input real oculto */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".txt"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+
+                  {/* Botón de analizar */}
+                  <button
+                    type="button"
+                    onClick={handleUpload}
+                    disabled={isUploading || !hasFile}
+                    className={`inline-flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-semibold shadow-md shadow-slate-900/40 transition
+                      ${
+                        hasFile
+                          ? 'border-emerald-500/60 bg-emerald-500 text-slate-950 hover:bg-emerald-400'
+                          : 'border-slate-600 bg-slate-900/60 text-slate-100 hover:bg-slate-800'
+                      }
+                      disabled:cursor-not-allowed disabled:opacity-60`}
+                  >
+                    {isUploading ? 'Analizando…' : 'Generar reporte'}
+                    <span className="rounded-full bg-slate-800/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                      Listo en 5 segundos
+                    </span>
+                  </button>
+                </div>
+
+                {/* link guía rápida */}
+                <p className="text-xs text-slate-400">
+                  ¿No sabes cómo exportar tu chat de WhatsApp?{' '}
+                  <button
+                    type="button"
+                    onClick={scrollToGuide}
+                    className="font-semibold text-emerald-300 hover:text-emerald-200"
+                  >
+                    Ver guía rápida
+                  </button>
                 </p>
-              )}
+
+                {/* estado del uploader / pago */}
+                {status && (
+                  <p className="flex items-center gap-2 text-[13px] text-slate-200">
+                    <span className="text-emerald-300">▸</span>
+                    {status}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -514,7 +583,7 @@ export default function Home() {
               <h3 className="text-sm font-semibold text-slate-100">Tu archivo es sólo tuyo</h3>
               <p className="mt-2 text-sm text-slate-300">
                 Usamos tu archivo únicamente para generar tu reporte. No vendemos ni compartimos tus
-                chats con terceros.
+               chats con terceros.
               </p>
             </div>
 
