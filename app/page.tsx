@@ -29,7 +29,7 @@ type AnalyzeResult = {
   fullChat: string;
 };
 
-export default function Home(): JSX.Element {
+export default function Home() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [status, setStatus] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
