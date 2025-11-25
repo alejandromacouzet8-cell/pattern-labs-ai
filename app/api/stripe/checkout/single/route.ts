@@ -1,6 +1,8 @@
-// app/api/stripe/checkout/single/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { stripe, PRICE_SINGLE } from "../../../lib/stripe";
+
+const APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL || "https://pattern-labs-ai-beta.vercel.app";
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,11 +17,10 @@ export async function POST(req: NextRequest) {
           quantity: 1,
         },
       ],
-      // email opcional -> si no viene, no rompe nada
       customer_email: email || undefined,
 
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/?canceled=1`,
+      success_url: `${APP_URL}/?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${APP_URL}/?canceled=1`,
 
       metadata: {
         type: "single_analysis",
