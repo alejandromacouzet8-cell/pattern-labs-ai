@@ -36,12 +36,42 @@ export default function Home() {
   const [result, setResult] = useState<AnalyzeResult | null>(null);
   const [openSectionId, setOpenSectionId] = useState<string | null>('resumen');
 
-  const [customerEmail, setCustomerEmail] = useState<string>('');
   const [isPaying, setIsPaying] = useState(false);
+  const [hasAccess, setHasAccess] = useState(false);
+
+  // 🔢 Créditos de preguntas a la IA (3 incluidos con el pago)
+  const [credits, setCredits] = useState<number>(0);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
   const hasFile = !!selectedFile;
+
+  // 🧠 Rehidratar acceso/credits desde localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const stored = window.localStorage.getItem('patternlabs_access');
+      if (!stored) return;
+      const parsed = JSON.parse(stored) as {
+        hasAccess?: boolean;
+        credits?: number;
+      };
+      if (parsed.hasAccess) setHasAccess(true);
+      if (typeof parsed.credits === 'number') setCredits(parsed.credits);
+    } catch (err) {
+      console.error('Error leyendo localStorage', err);
+    }
+  }, []);
+
+  // Guardar cambios en localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const payload = JSON.stringify({ hasAccess, credits });
+      window.localStorage.setItem('patternlabs_access', payload);
+    } catch (err) {
+      console.error('Error guardando localStorage', err);
+    }
+  }, [hasAccess, credits]);
 
   // Cuando haya resultado, bajamos automáticamente al reporte
   useEffect(() => {
@@ -55,13 +85,53 @@ export default function Home() {
     }
   }, [result]);
 
+  // Cuando regresa de Stripe con ?session_id=...
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session_id');
+
+    if (!sessionId) return;
+
+    (async () => {
+      try {
+        const res = await fetch(`/api/stripe/confirm?session_id=${sessionId}`);
+        const data = await res.json();
+
+        if (data.ok) {
+          setHasAccess(true);
+          // Si no tenía créditos aún, asignar los 3 incluidos con el pago
+          setCredits((prev) => (prev > 0 ? prev : 3));
+          setStatus(
+            'Pago confirmado ✅ Ya puedes ver el análisis completo y hacer 3 preguntas a la IA sobre tu chat.'
+          );
+          // Limpiar la query de la URL
+          window.history.replaceState({}, '', window.location.pathname);
+        } else {
+          setStatus(
+            data.error ||
+              'No se pudo confirmar el pago. Si ya se te cobró, contáctanos.'
+          );
+        }
+      } catch (error) {
+        console.error(error);
+        setStatus(
+          'Ocurrió un problema al confirmar el pago. Intenta recargar la página.'
+        );
+      }
+    })();
+  }, []);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setSelectedFile(file);
     setResult(null);
 
     if (file) {
-      setStatus(`Archivo seleccionado: "${file.name}". Ahora toca Analizar mi chat.`);
+      setStatus(
+        `Archivo seleccionado: "${file.name}". Ahora toca generar tu reporte.`
+      );
     } else {
       setStatus('');
     }
@@ -80,6 +150,8 @@ export default function Home() {
 
       const formData = new FormData();
       formData.append('file', selectedFile);
+      // 👇 Modo demo si no ha pagado, modo full si ya pagó
+      formData.append('mode', hasAccess ? 'full' : 'free');
 
       const res = await fetch('/api/analyze', {
         method: 'POST',
@@ -93,7 +165,11 @@ export default function Home() {
         return;
       }
 
-      setStatus('Reporte generado correctamente. 🎯');
+      setStatus(
+        hasAccess
+          ? 'Reporte completo generado correctamente. 🎯'
+          : 'Reporte demo generado correctamente. 🎯'
+      );
       setResult(data as AnalyzeResult);
       setOpenSectionId('resumen');
     } catch (error) {
@@ -115,26 +191,21 @@ export default function Home() {
   };
 
   const handleCheckoutSingle = async () => {
-    if (!customerEmail.trim()) {
-      setStatus('Escribe tu correo para iniciar el pago del análisis.');
-      return;
-    }
-
     try {
       setIsPaying(true);
       setStatus('Creando sesión de pago segura…');
 
-      const res = await fetch('/api/checkout/single', {
+      const res = await fetch('/api/stripe/checkout/single', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customerEmail: customerEmail.trim() }),
       });
 
       const data = await res.json();
 
       if (!res.ok || !data.url) {
         console.error('Stripe error:', data);
-        setStatus(data.error || 'No se pudo iniciar el pago. Intenta de nuevo.');
+        setStatus(
+          data.error || 'No se pudo iniciar el pago. Intenta de nuevo.'
+        );
         return;
       }
 
@@ -146,6 +217,10 @@ export default function Home() {
     } finally {
       setIsPaying(false);
     }
+  };
+
+  const consumeCredit = () => {
+    setCredits((prev) => Math.max(prev - 1, 0));
   };
 
   return (
@@ -193,26 +268,41 @@ export default function Home() {
                   Paso 0 · Desbloquea tu análisis completo
                 </p>
                 <p className="mt-1 text-xs text-slate-300">
-                  Paga un análisis profundo de un chat. Después de pagar, subes tu archivo .txt y
-                  obtienes el reporte completo + chat con la IA.
+                  Puedes generar primero un reporte demo gratis. Cuando quieras ver el análisis
+                  completo y usar el chat con IA, desbloquea tu acceso con un único pago.
+                </p>
+                <p className="mt-1 text-xs text-emerald-200">
+                  Con tu pago de <strong>MX$49</strong> obtienes:
+                  <br />• Acceso al reporte completo
+                  <br />• Todos los patrones detectados
+                  <br />• <strong>3 preguntas a la IA</strong> usando tu chat completo
                 </p>
 
                 <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <input
-                    type="email"
-                    value={customerEmail}
-                    onChange={(e) => setCustomerEmail(e.target.value)}
-                    placeholder="Tu correo (para recibo y soporte)"
-                    className="flex-1 rounded-full border border-slate-700 bg-slate-900/80 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-400"
-                  />
                   <button
                     type="button"
                     onClick={handleCheckoutSingle}
                     disabled={isPaying}
                     className="inline-flex items-center justify-center rounded-full bg-emerald-500 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {isPaying ? 'Redirigiendo a pago…' : 'Pagar análisis · MX$49'}
+                    {isPaying
+                      ? 'Redirigiendo a pago…'
+                      : 'Desbloquear análisis completo · MX$49'}
                   </button>
+                  {!hasAccess && (
+                    <p className="text-[11px] text-slate-400">
+                      Sin pagar verás una versión demo del reporte. El pago desbloquea todos los
+                      patrones y 3 preguntas a la IA.
+                    </p>
+                  )}
+                  {hasAccess && (
+                    <p className="text-[11px] text-emerald-300">
+                      Acceso completo activado ✅ Preguntas disponibles:{' '}
+                      <span className="font-semibold">
+                        {credits} / 3
+                      </span>
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -409,6 +499,21 @@ export default function Home() {
                   Archivo: <span className="font-mono">{result.fileName}</span> ·{' '}
                   {result.length.toLocaleString()} caracteres analizados
                 </p>
+                {!hasAccess && (
+                  <p className="mt-1 text-[11px] text-amber-300">
+                    Estás viendo una versión demo del reporte. Desbloquea tu análisis completo para
+                    ver todos los patrones y usar el chat con IA.
+                  </p>
+                )}
+                {hasAccess && (
+                  <p className="mt-1 text-[11px] text-emerald-300">
+                    Tienes{' '}
+                    <span className="font-semibold">
+                      {credits} / 3
+                    </span>{' '}
+                    preguntas disponibles con la IA sobre este chat.
+                  </p>
+                )}
               </div>
 
               {typeof result.score === 'number' && (
@@ -498,6 +603,9 @@ export default function Home() {
               <ChatBox
                 analysis={result.rawAnalysis ?? ''}
                 fullChat={result.fullChat ?? ''}
+                hasAccess={hasAccess}
+                credits={credits}
+                onConsumeCredit={consumeCredit}
               />
             </div>
           </div>
@@ -583,7 +691,7 @@ export default function Home() {
               <h3 className="text-sm font-semibold text-slate-100">Tu archivo es sólo tuyo</h3>
               <p className="mt-2 text-sm text-slate-300">
                 Usamos tu archivo únicamente para generar tu reporte. No vendemos ni compartimos tus
-               chats con terceros.
+                chats con terceros.
               </p>
             </div>
 
@@ -697,9 +805,15 @@ export default function Home() {
 function ChatBox({
   analysis,
   fullChat,
+  hasAccess,
+  credits,
+  onConsumeCredit,
 }: {
   analysis: string;
   fullChat: string;
+  hasAccess: boolean;
+  credits: number;
+  onConsumeCredit: () => void;
 }) {
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState<string | null>(null);
@@ -708,6 +822,21 @@ function ChatBox({
 
   const handleAsk = async () => {
     if (!question.trim()) return;
+
+    if (!hasAccess) {
+      setError(
+        'Para hacerle preguntas a la IA primero desbloquea tu análisis completo 🧠'
+      );
+      return;
+    }
+
+    if (credits <= 0) {
+      setError(
+        'Ya utilizaste tus 3 preguntas incluidas. Muy pronto podrás comprar más preguntas para seguir explorando tu chat. 🙌'
+      );
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -731,6 +860,7 @@ function ChatBox({
       }
 
       setAnswer(data.answer || '');
+      onConsumeCredit();
     } catch (err) {
       console.error(err);
       setError('Error de red o del servidor al responder tu pregunta.');
@@ -749,12 +879,22 @@ function ChatBox({
         trabajar yo para mejorar esto?”
       </p>
 
+      {hasAccess && (
+        <p className="mb-2 text-[11px] text-emerald-300">
+          Preguntas disponibles con la IA: <span className="font-semibold">{credits}</span> / 3
+        </p>
+      )}
+
       <textarea
         value={question}
         onChange={(e) => setQuestion(e.target.value)}
         rows={2}
         className="w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-400"
-        placeholder="Escribe tu pregunta aquí…"
+        placeholder={
+          hasAccess
+            ? 'Escribe tu pregunta aquí…'
+            : 'Desbloquea tu análisis completo para usar el chat con IA'
+        }
       />
 
       <div className="mt-3 flex items-center gap-3">
@@ -764,7 +904,11 @@ function ChatBox({
           disabled={loading || !question.trim()}
           className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-slate-950 hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loading ? 'Analizando…' : 'Preguntar a la IA'}
+          {loading
+            ? 'Analizando…'
+            : hasAccess
+            ? 'Preguntar a la IA'
+            : 'Desbloquea para usar el chat'}
         </button>
         {error && <span className="text-xs text-rose-300">{error}</span>}
       </div>
