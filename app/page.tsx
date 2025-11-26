@@ -2,6 +2,9 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 
+/** Flag solo para desarrollo (Next reemplaza esto en build) */
+const isDev = process.env.NODE_ENV !== 'production';
+
 /** Tipos del reporte */
 type ReportBadge = {
   label: string;
@@ -219,6 +222,16 @@ export default function Home() {
     }
   };
 
+  /** 🔧 Botón dev para borrar el estado local de acceso */
+  const handleResetAccess = () => {
+    setHasAccess(false);
+    setCredits(0);
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('patternlabs_access');
+    }
+    setStatus('Estado de acceso reiniciado en este navegador (solo tú lo ves).');
+  };
+
   const consumeCredit = () => {
     setCredits((prev) => Math.max(prev - 1, 0));
   };
@@ -304,6 +317,17 @@ export default function Home() {
                     </p>
                   )}
                 </div>
+
+                {/* Botón dev para resetear el estado local de pruebas */}
+                {isDev && (
+                  <button
+                    type="button"
+                    onClick={handleResetAccess}
+                    className="mt-2 text-[10px] text-slate-500 underline underline-offset-2 hover:text-slate-300"
+                  >
+                    Resetear acceso de prueba (solo este navegador)
+                  </button>
+                )}
               </div>
 
               {/* Controles de archivo */}
