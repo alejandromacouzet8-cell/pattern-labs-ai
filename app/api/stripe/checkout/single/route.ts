@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe, PRICE_SINGLE } from "../../../lib/stripe";
 
-const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL || "https://pattern-labs-ai-beta.vercel.app";
-
 export async function POST(req: NextRequest) {
   try {
     const { email } = await req.json().catch(() => ({ email: null }));
+
+    // Detectar la URL base desde el request (funciona en local y producción)
+    const origin = req.headers.get("origin") || req.headers.get("referer")?.split("/").slice(0, 3).join("/") || "http://localhost:3000";
+    const APP_URL = process.env.NEXT_PUBLIC_APP_URL || origin;
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
