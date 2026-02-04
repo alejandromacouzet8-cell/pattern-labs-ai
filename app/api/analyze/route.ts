@@ -37,7 +37,7 @@ type AnalyzeResult = {
   // Core metric (ALWAYS present)
   patternScore: PatternScore;
 
-  // Main patterns (demo: 3, paid: 6-8)
+  // Main patterns (demo: 3, paid: 8)
   patterns: PatternItem[];
 
   // Insights (PAID ONLY)
@@ -117,7 +117,7 @@ Devuelve EXCLUSIVAMENTE este JSON válido:
 
 REGLAS PARA PATRONES:
 - MODO DEMO: Devolver EXACTAMENTE 3 patrones (1 Emoción, 1 Dinámica, 1 Fortaleza)
-- MODO FULL: Devolver 6-8 patrones diversos + campo "evidence" en cada patrón
+- MODO FULL: Devolver EXACTAMENTE 8 patrones diversos (2 Emoción, 2 Dinámica, 2 Fortaleza, 2 Riesgo) + campo "evidence" en cada patrón
 - Cada patrón debe:
   • Ser específico a ESTE chat
   • Evitar generalizaciones
@@ -171,9 +171,10 @@ export async function POST(req: Request) {
     console.log("🎯 MODE:", isFullMode ? "FULL" : "DEMO");
     console.log("👀 PREVIEW:", text.slice(0, 300));
 
-    // ✂️ LÍMITE DE SEGURIDAD: Máximo 40,000 caracteres (~10k tokens)
-    // Esto evita el error "Request too large" de OpenAI
-    const MAX_CHARS = 40000;
+    // ✂️ LÍMITE DE SEGURIDAD: Máximo 150,000 caracteres (~37k tokens)
+    // GPT-4o-mini tiene 128k context, esto permite chats muy grandes
+    // Costo aprox: $0.15/1M tokens input = ~$0.006 por chat grande
+    const MAX_CHARS = 150000;
     let processedText = text;
     let wasTruncated = false;
 
@@ -200,7 +201,7 @@ export async function POST(req: Request) {
         {
           role: "user",
           content: `
-MODO: ${isFullMode ? "FULL (devuelve 6-8 patrones con evidencia)" : "DEMO (devuelve EXACTAMENTE 3 patrones: 1 Emoción, 1 Dinámica, 1 Fortaleza)"}
+MODO: ${isFullMode ? "FULL (devuelve EXACTAMENTE 8 patrones con evidencia: 2 Emoción, 2 Dinámica, 2 Fortaleza, 2 Riesgo)" : "DEMO (devuelve EXACTAMENTE 3 patrones: 1 Emoción, 1 Dinámica, 1 Fortaleza)"}
 
 Este es un chat exportado de WhatsApp${wasTruncated ? ' (mensajes más recientes debido al tamaño)' : ''}.
 
