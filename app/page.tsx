@@ -4148,26 +4148,11 @@ function ChatBox({
                     {/* Si es la última respuesta y está animando */}
                     {idx === chatHistory.length - 1 && isAnimating ? (
                       <>
-                        {/* Paso 1: Indicador tipo Siri */}
+                        {/* Mientras piensa, mostramos mensaje mínimo (la card de IA Experta ya está abajo) */}
                         {animationStep === 'thinking' && (
-                          <div className="flex items-center gap-3 py-2">
-                            {/* Círculo tipo Siri con ondas */}
-                            <div className="relative w-10 h-10">
-                              {/* Ondas expansivas */}
-                              <div className="absolute inset-0 rounded-full bg-purple-500/30 animate-ping" style={{ animationDuration: '1.5s' }}></div>
-                              <div className="absolute inset-1 rounded-full bg-purple-500/40 animate-ping" style={{ animationDuration: '1.5s', animationDelay: '0.3s' }}></div>
-                              {/* Círculo central con gradiente */}
-                              <div className="absolute inset-2 rounded-full bg-gradient-to-br from-purple-400 via-fuchsia-500 to-purple-600 shadow-lg shadow-purple-500/50 animate-pulse"></div>
-                              {/* Brillo interior */}
-                              <div className="absolute inset-[10px] rounded-full bg-gradient-to-br from-white/30 to-transparent"></div>
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-sm font-semibold text-purple-200">Analizando...</span>
-                              <span className="text-xs text-slate-400">La IA está procesando tu pregunta</span>
-                            </div>
-                          </div>
+                          <p className="text-sm text-purple-300 italic animate-pulse">Procesando...</p>
                         )}
-                        {/* Paso 2: Revelando palabra por palabra */}
+                        {/* Revelando palabra por palabra */}
                         {animationStep === 'revealing' && (
                           <p className="text-sm text-slate-100 whitespace-pre-wrap leading-relaxed">
                             {displayedAnswer}
