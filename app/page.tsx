@@ -4174,33 +4174,16 @@ function ChatBox({
                         <p className="text-sm font-bold text-white">¿Quieres seguir preguntando?</p>
                         <p className="text-xs text-purple-200">+3 preguntas por MX$49</p>
                       </div>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={onUnlockClick}
-                          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-fuchsia-500 px-4 py-2 text-sm font-bold text-white shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
-                        >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                          </svg>
-                          Desbloquear
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            // Limpiar resultado y chat history, pero mantener acceso
-                            window.localStorage.removeItem('patternlabs_result');
-                            window.localStorage.removeItem('patternlabs_chat_history');
-                            // Resetear estados locales
-                            onNewChat?.();
-                            // Scroll suave arriba
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                          }}
-                          className="inline-flex items-center gap-2 rounded-lg bg-slate-700/80 hover:bg-slate-600/80 px-4 py-2 text-sm font-medium text-slate-200 transition-all"
-                        >
-                          Nuevo chat
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={onUnlockClick}
+                        className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-fuchsia-500 px-4 py-2 text-sm font-bold text-white shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Desbloquear
+                      </button>
                     </div>
                   </div>
                 )}
