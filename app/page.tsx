@@ -1951,11 +1951,16 @@ export default function Home() {
                 onConsumeCredit={consumeCredit}
                 onUnlockClick={handleCheckoutSingle}
                 onNewChat={() => {
+                  // Limpiar todo para empezar de cero como usuario nuevo
                   setResult(null);
                   setSelectedFile(null);
                   setDemoAsked(false);
                   setDemoQuestion('');
                   setSavedDemoQuestion('');
+                  // Reset acceso (tienen 0 créditos, deben pagar de nuevo)
+                  setHasAccess(false);
+                  setCredits(0);
+                  window.localStorage.removeItem('patternlabs_access');
                 }}
               />
             </div>
