@@ -2567,130 +2567,104 @@ export default function Home() {
               </div>
 
               <div className="space-y-4">
-                {/* Pregunta 1 */}
+                {/* LA PREGUNTA - una sola, poderosa */}
                 <div className="flex justify-end">
-                  <div className="max-w-md rounded-2xl rounded-tr-sm bg-gradient-to-r from-emerald-500 to-cyan-500 px-4 py-3 shadow-lg">
-                    <p className="text-sm font-medium text-slate-950">
-                      "¿Quién está más enganchado en esta relación?"
+                  <div className="max-w-sm rounded-2xl rounded-tr-sm bg-gradient-to-r from-emerald-500 to-cyan-500 px-5 py-3.5 shadow-lg shadow-emerald-500/20">
+                    <p className="text-sm font-bold text-slate-950">
+                      "¿De verdad me quiere o solo le conviene estar conmigo?"
                     </p>
-                  </div>
-                </div>
-                {/* Respuesta IA 1 */}
-                <div className="flex justify-start">
-                  <div className="max-w-lg rounded-2xl rounded-tl-sm bg-gradient-to-br from-purple-950/80 via-slate-800 to-slate-900 border-2 border-purple-500/50 px-5 py-4 shadow-xl shadow-purple-500/20">
-                    <div className="space-y-3">
-                      <p className="text-sm text-slate-300">
-                        Basado en el análisis:
-                      </p>
-                      <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/20 border border-red-500/50 shadow-lg shadow-red-500/10">
-                        <span className="text-2xl font-black text-white">73%</span>
-                        <span className="text-sm font-bold text-red-200">más invertido/a</span>
-                      </div>
-                      <ul className="space-y-2 text-sm text-slate-200">
-                        <li className="flex items-start gap-2">
-                          <span className="text-purple-400 text-lg">•</span>
-                          <span>Inicias el <strong className="text-white font-bold">84%</strong> de las conversaciones</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-purple-400 text-lg">•</span>
-                          <span>Tus mensajes son <strong className="text-white font-bold">3x más largos</strong></span>
-                        </li>
-                      </ul>
-                      <div className="pt-2 border-t border-slate-700/50">
-                        <p className="text-xs text-slate-300 italic flex items-start gap-2">
-                          <span className="text-yellow-400">⚠️</span>
-                          <span>Esto sugiere un <strong className="text-yellow-300">desequilibrio emocional</strong> que podría afectar la dinámica a largo plazo.</span>
-                        </p>
-                      </div>
-                    </div>
                   </div>
                 </div>
 
-                {/* Pregunta 2 */}
-                <div className="flex justify-end">
-                  <div className="max-w-md rounded-2xl rounded-tr-sm bg-gradient-to-r from-emerald-500 to-cyan-500 px-4 py-3 shadow-lg">
-                    <p className="text-sm font-medium text-slate-950">
-                      "¿Qué debería cambiar yo específicamente?"
-                    </p>
-                  </div>
-                </div>
-                {/* Respuesta IA 2 */}
+                {/* LA RESPUESTA - brutal, larga, con datos */}
                 <div className="flex justify-start">
-                  <div className="max-w-lg rounded-2xl rounded-tl-sm bg-gradient-to-br from-purple-950/80 via-slate-800 to-slate-900 border-2 border-purple-500/50 px-5 py-4 shadow-xl shadow-purple-500/20">
-                    <div className="space-y-3">
-                      <p className="text-sm font-semibold text-purple-200 mb-3">
-                        💡 Recomendaciones personalizadas:
-                      </p>
-                      <div className="space-y-3">
-                        <div className="flex items-start gap-3 bg-slate-900/60 rounded-lg p-3 border border-emerald-500/30">
-                          <div className="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center">
-                            <span className="text-emerald-300 font-bold text-sm">1</span>
-                          </div>
-                          <div>
-                            <p className="text-sm text-slate-200"><strong className="text-white font-bold">Espera a que él/ella inicie</strong> algunas conversaciones</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3 bg-slate-900/60 rounded-lg p-3 border border-emerald-500/30">
-                          <div className="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center">
-                            <span className="text-emerald-300 font-bold text-sm">2</span>
-                          </div>
-                          <div>
-                            <p className="text-sm text-slate-200"><strong className="text-white font-bold">Mensajes más cortos</strong> para ver si hay reciprocidad</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3 bg-slate-900/60 rounded-lg p-3 border border-emerald-500/30">
-                          <div className="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center">
-                            <span className="text-emerald-300 font-bold text-sm">3</span>
-                          </div>
-                          <div>
-                            <p className="text-sm text-slate-200"><strong className="text-white font-bold">Observa</strong> si el interés sube cuando tú bajas tu intensidad</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  <div className="w-full max-w-2xl rounded-2xl rounded-tl-sm bg-gradient-to-br from-purple-950/90 via-slate-900 to-slate-950 border-2 border-purple-500/50 p-6 shadow-2xl shadow-purple-500/20">
 
-                {/* Pregunta 3 */}
-                <div className="flex justify-end">
-                  <div className="max-w-md rounded-2xl rounded-tr-sm bg-gradient-to-r from-emerald-500 to-cyan-500 px-4 py-3 shadow-lg">
-                    <p className="text-sm font-medium text-slate-950">
-                      "¿Esta relación tiene futuro?"
-                    </p>
-                  </div>
-                </div>
-                {/* Respuesta IA 3 - con typing indicator */}
-                <div className="flex justify-start">
-                  <div className="max-w-lg rounded-2xl rounded-tl-sm bg-gradient-to-br from-purple-950/80 via-slate-800 to-slate-900 border-2 border-purple-500/50 px-5 py-4 shadow-xl shadow-purple-500/20">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-yellow-400 text-xl">⚠️</span>
-                        <p className="text-sm font-semibold text-yellow-300">
-                          Análisis de futuro
-                        </p>
+                    {/* Headline stat - el gancho */}
+                    <div className="text-center mb-6 pb-5 border-b border-slate-700/50">
+                      <p className="text-xs uppercase tracking-widest text-slate-500 mb-2">Análisis de 47,832 mensajes</p>
+                      <div className="inline-flex items-baseline gap-2">
+                        <span className="text-5xl font-black bg-gradient-to-r from-rose-400 to-orange-400 bg-clip-text text-transparent">73%</span>
+                        <span className="text-lg font-bold text-slate-300">de probabilidad de que</span>
                       </div>
-                      <p className="text-sm text-slate-200 leading-relaxed">
-                        Los patrones actuales muestran <strong className="text-yellow-300 font-bold">señales de alerta</strong>, pero no son definitivos.
-                      </p>
-                      <div className="bg-slate-900/60 rounded-lg p-3 border border-slate-700/50">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pattern Score</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-2xl font-black text-red-400">23</span>
-                            <span className="text-sm text-slate-500">/100</span>
-                          </div>
-                        </div>
-                        <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-red-500 to-orange-500" style={{ width: '23%' }}></div>
-                        </div>
+                      <p className="text-2xl font-bold text-white mt-1">sí te quiere genuinamente</p>
+                    </div>
+
+                    {/* Evidence grid */}
+                    <div className="grid grid-cols-2 gap-3 mb-5">
+                      <div className="bg-emerald-500/10 rounded-xl p-3 border border-emerald-500/30">
+                        <p className="text-2xl font-black text-emerald-300">2,847</p>
+                        <p className="text-xs text-slate-400">veces dijo "te amo"</p>
                       </div>
-                      <div className="pt-2 border-t border-slate-700/50">
-                        <p className="text-sm text-slate-200 flex items-start gap-2">
-                          <span className="text-emerald-400 text-lg">✓</span>
-                          <span><strong className="text-white font-bold">Puede mejorar</strong> si ambos se comprometen a balancear la comunicación...</span>
-                        </p>
+                      <div className="bg-rose-500/10 rounded-xl p-3 border border-rose-500/30">
+                        <p className="text-2xl font-black text-rose-300">847</p>
+                        <p className="text-xs text-slate-400">veces dijiste tú</p>
+                      </div>
+                      <div className="bg-cyan-500/10 rounded-xl p-3 border border-cyan-500/30">
+                        <p className="text-2xl font-black text-cyan-300">3:47am</p>
+                        <p className="text-xs text-slate-400">hora promedio que te escribe</p>
+                      </div>
+                      <div className="bg-amber-500/10 rounded-xl p-3 border border-amber-500/30">
+                        <p className="text-2xl font-black text-amber-300">94%</p>
+                        <p className="text-xs text-slate-400">responde en menos de 5 min</p>
                       </div>
                     </div>
+
+                    {/* The insight that hits */}
+                    <div className="bg-white/5 rounded-xl p-4 mb-5 relative overflow-hidden">
+                      <span className="absolute top-2 left-3 text-4xl text-purple-500/20 font-serif">"</span>
+                      <p className="text-sm text-slate-200 italic pl-5 leading-relaxed">
+                        El 15 de marzo a las 2am, después de tu mensaje frío, él/ella escribió: <strong className="text-white not-italic">"No sé qué hice mal, pero no quiero perderte. Eres lo mejor que me ha pasado."</strong>
+                      </p>
+                      <p className="text-xs text-purple-300 mt-2 pl-5">— Mensaje encontrado en tu chat</p>
+                    </div>
+
+                    {/* Key findings with emojis */}
+                    <div className="space-y-3 mb-5">
+                      <p className="text-xs uppercase tracking-widest text-slate-500 mb-3">Lo que encontré:</p>
+                      <div className="flex items-start gap-3">
+                        <span className="text-xl">💚</span>
+                        <p className="text-sm text-slate-200"><strong className="text-emerald-300">Inicia conversaciones</strong> el 67% de las veces, incluso cuando no le contestas rápido</p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <span className="text-xl">💚</span>
+                        <p className="text-sm text-slate-200"><strong className="text-emerald-300">Recuerda detalles pequeños</strong> — mencionó tu comida favorita 12 veces sin que se lo pidieras</p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <span className="text-xl">💚</span>
+                        <p className="text-sm text-slate-200"><strong className="text-emerald-300">Te defiende</strong> — cuando mencionaste problemas en el trabajo, envió 23 mensajes seguidos de apoyo</p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <span className="text-xl">⚠️</span>
+                        <p className="text-sm text-slate-200"><strong className="text-amber-300">Un patrón preocupante:</strong> Después de peleas, tú tardas 2 días en escribir. Él/ella siempre escribe primero.</p>
+                      </div>
+                    </div>
+
+                    {/* Warning box */}
+                    <div className="bg-amber-500/10 rounded-xl p-4 border border-amber-500/30 mb-5">
+                      <div className="flex items-start gap-3">
+                        <span className="text-2xl">🔮</span>
+                        <div>
+                          <p className="text-sm font-bold text-amber-200 mb-1">Mi predicción honesta:</p>
+                          <p className="text-sm text-slate-300 leading-relaxed">
+                            Basándome en 8 meses de conversaciones, <strong className="text-white">él/ella está significativamente más invertido/a emocionalmente</strong>. Esto puede cambiar si no hay reciprocidad. El próximo mes es crítico.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Final score */}
+                    <div className="flex items-center justify-between bg-slate-800/50 rounded-xl p-4">
+                      <div>
+                        <p className="text-xs text-slate-500 uppercase tracking-wider">Índice de amor genuino</p>
+                        <p className="text-sm text-slate-400">basado en acciones, no palabras</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-3xl font-black text-emerald-400">7.3</span>
+                        <span className="text-lg text-slate-500">/10</span>
+                      </div>
+                    </div>
+
                   </div>
                 </div>
               </div>
