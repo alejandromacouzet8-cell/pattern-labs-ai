@@ -770,11 +770,9 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={scrollToGuide}
-                  className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-emerald-400 transition-colors"
+                  className="inline-flex items-center gap-2 text-base font-medium text-purple-300 hover:text-purple-200 transition-colors"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  <span className="text-lg">📲</span>
                   ¿Cómo exportar tu chat?
                 </button>
 
@@ -909,11 +907,9 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={scrollToGuide}
-                    className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80 underline underline-offset-2 decoration-white/30 hover:decoration-white/50 transition-all"
+                    className="flex items-center gap-2 text-sm font-medium text-purple-300/90 hover:text-purple-200 transition-all"
                   >
-                    <svg className="w-3.5 h-3.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    <span>📲</span>
                     ¿Cómo exportar?
                   </button>
                   <button
@@ -922,11 +918,9 @@ export default function Home() {
                       const el = document.getElementById('privacy');
                       if (el) el.scrollIntoView({ behavior: 'smooth' });
                     }}
-                    className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80 underline underline-offset-2 decoration-white/30 hover:decoration-white/50 transition-all"
+                    className="flex items-center gap-2 text-sm font-medium text-emerald-300/90 hover:text-emerald-200 transition-all"
                   >
-                    <svg className="w-3.5 h-3.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
+                    <span>🔒</span>
                     Privacidad
                   </button>
                 </div>
