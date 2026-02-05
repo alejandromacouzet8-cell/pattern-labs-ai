@@ -1039,94 +1039,92 @@ export default function Home() {
                   </div>
                 </div>
 
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Lo que nos hace únicos</p>
-                <div className="space-y-3">
+                {/* Section header con estilo premium */}
+                <div className="flex items-center gap-2 mb-5">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-700 to-transparent"></div>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Por qué elegirnos</p>
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-700 to-transparent"></div>
+                </div>
+
+                <div className="space-y-2.5">
+                  {/* Card 1 - IA Chat - DESTACADA */}
                   <button
                     type="button"
                     onClick={() => {
                       const el = document.getElementById('ai-chat-feature');
                       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }}
-                    className="w-full flex items-center gap-3 text-left p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 hover:bg-purple-500/20 hover:border-purple-500/50 transition-all group"
+                    className="w-full flex items-center gap-3 text-left p-3.5 rounded-2xl bg-gradient-to-r from-purple-500/20 via-fuchsia-500/10 to-purple-500/20 border border-purple-500/40 hover:border-purple-400/60 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300 group relative overflow-hidden"
                   >
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                      </svg>
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/5 to-purple-500/0 group-hover:via-purple-500/10 transition-all duration-500"></div>
+                    <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:scale-105 group-hover:rotate-3 transition-all duration-300">
+                      <span className="text-xl">🤖</span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-100">Lo que otros NO tienen</p>
-                      <p className="text-xs text-purple-300">Pregúntale a la IA sobre TU chat</p>
+                    <div className="flex-1 min-w-0 relative">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-bold text-white">Chat con IA</p>
+                        <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-purple-500/30 text-purple-200 uppercase">Único</span>
+                      </div>
+                      <p className="text-xs text-purple-200/80">Pregúntale cualquier cosa sobre tu relación</p>
                     </div>
-                    <svg className="w-4 h-4 text-slate-500 flex-shrink-0 group-hover:translate-y-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
+                    <div className="relative text-purple-400 group-hover:translate-x-1 transition-transform">→</div>
                   </button>
 
+                  {/* Card 2 - Ejemplos reales */}
                   <button
                     type="button"
                     onClick={() => {
                       const el = document.getElementById('real-examples');
                       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }}
-                    className="w-full flex items-center gap-3 text-left p-3 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 transition-all group"
+                    className="w-full flex items-center gap-3 text-left p-3.5 rounded-2xl bg-slate-800/40 border border-slate-700/50 hover:bg-slate-800/60 hover:border-slate-600 transition-all duration-300 group backdrop-blur-sm"
                   >
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
-                      </svg>
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center shadow-lg group-hover:scale-105 group-hover:-rotate-3 transition-all duration-300">
+                      <span className="text-xl">💬</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-100">Conversaciones reales</p>
-                      <p className="text-xs text-slate-400">Ejemplos que te van a sorprender</p>
+                      <p className="text-sm font-semibold text-slate-100">Casos reales</p>
+                      <p className="text-xs text-slate-400">Mira análisis de otros usuarios</p>
                     </div>
-                    <svg className="w-4 h-4 text-slate-500 flex-shrink-0 group-hover:translate-y-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
+                    <div className="text-slate-500 group-hover:translate-x-1 group-hover:text-slate-400 transition-all">→</div>
                   </button>
 
+                  {/* Card 3 - Cómo funciona */}
                   <button
                     type="button"
                     onClick={() => {
                       const el = document.getElementById('how-it-works');
                       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }}
-                    className="w-full flex items-center gap-3 text-left p-3 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 transition-all group"
+                    className="w-full flex items-center gap-3 text-left p-3.5 rounded-2xl bg-slate-800/40 border border-slate-700/50 hover:bg-slate-800/60 hover:border-slate-600 transition-all duration-300 group backdrop-blur-sm"
                   >
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-600 flex items-center justify-center shadow-lg group-hover:scale-105 group-hover:rotate-3 transition-all duration-300">
+                      <span className="text-xl">⚡</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-100">Cómo funciona</p>
-                      <p className="text-xs text-slate-400">De 0 a insights en 30 segundos</p>
+                      <p className="text-sm font-semibold text-slate-100">Ultra rápido</p>
+                      <p className="text-xs text-slate-400">Resultados en 30 segundos</p>
                     </div>
-                    <svg className="w-4 h-4 text-slate-500 flex-shrink-0 group-hover:translate-y-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
+                    <div className="text-slate-500 group-hover:translate-x-1 group-hover:text-slate-400 transition-all">→</div>
                   </button>
 
+                  {/* Card 4 - Privacidad */}
                   <button
                     type="button"
                     onClick={() => {
                       const el = document.getElementById('privacy');
                       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }}
-                    className="w-full flex items-center gap-3 text-left p-3 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 transition-all group"
+                    className="w-full flex items-center gap-3 text-left p-3.5 rounded-2xl bg-slate-800/40 border border-slate-700/50 hover:bg-slate-800/60 hover:border-slate-600 transition-all duration-300 group backdrop-blur-sm"
                   >
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-sky-500 to-blue-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      </svg>
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-lg group-hover:scale-105 group-hover:-rotate-3 transition-all duration-300">
+                      <span className="text-xl">🔒</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-100">Privacidad extrema</p>
-                      <p className="text-xs text-slate-400">No guardamos tu chat. Nunca.</p>
+                      <p className="text-sm font-semibold text-slate-100">100% privado</p>
+                      <p className="text-xs text-slate-400">Tu chat nunca se guarda</p>
                     </div>
-                    <svg className="w-4 h-4 text-slate-500 flex-shrink-0 group-hover:translate-y-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
+                    <div className="text-slate-500 group-hover:translate-x-1 group-hover:text-slate-400 transition-all">→</div>
                   </button>
                 </div>
 
