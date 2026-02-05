@@ -58,6 +58,25 @@ type AnalyzeResult = {
   fullChat: string;
   truncated?: boolean;
   processedLength?: number;
+
+  // Estadísticas pre-calculadas del chat completo
+  chatStats?: {
+    totalMessages: number;
+    participants: {
+      name: string;
+      messageCount: number;
+      wordCount: number;
+      avgWordsPerMessage: number;
+      mostActiveHours?: string;
+    }[];
+    totalWords: number;
+    dateRange: { first: string | null; last: string | null };
+    phraseCounts?: {
+      phrase: string;
+      total: number;
+      byParticipant: Record<string, number>;
+    }[];
+  };
 };
 
 export default function Home() {
