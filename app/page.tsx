@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import JSZip from 'jszip';
 
 /** Flag solo para desarrollo (Next reemplaza esto en build) */
 const isDev = process.env.NODE_ENV !== 'production';
@@ -246,10 +247,11 @@ export default function Home() {
     setFileToUpload(null);
   };
 
-  // 📦 Validar archivo
+  // 📦 Validar archivo (acepta .txt y .zip)
   const validateFile = (file: File): string | null => {
-    if (!file.name.endsWith('.txt')) {
-      return 'Este archivo no parece ser un chat de WhatsApp exportado. Asegúrate de exportar como .txt';
+    const isValid = file.name.endsWith('.txt') || file.name.endsWith('.zip');
+    if (!isValid) {
+      return 'Archivo no válido. Sube el .txt o .zip exportado de WhatsApp.';
     }
     if (file.size < 500) {
       return 'El archivo es demasiado pequeño. Asegúrate de que sea un chat de WhatsApp exportado.';
@@ -260,14 +262,55 @@ export default function Home() {
     return null;
   };
 
-  // 📦 Manejar selección de archivo en modal
-  const handleModalFileSelect = (file: File) => {
+  // 📦 Extraer .txt de un archivo .zip
+  const extractTxtFromZip = async (zipFile: File): Promise<File | null> => {
+    try {
+      const zip = await JSZip.loadAsync(zipFile);
+      const txtFiles = Object.keys(zip.files).filter(name => name.endsWith('.txt'));
+
+      if (txtFiles.length === 0) {
+        return null;
+      }
+
+      // Tomar el primer .txt encontrado (WhatsApp exporta solo uno)
+      const txtFileName = txtFiles[0];
+      const txtContent = await zip.files[txtFileName].async('blob');
+
+      // Crear un nuevo File object con el contenido extraído
+      return new File([txtContent], txtFileName, { type: 'text/plain' });
+    } catch (error) {
+      console.error('Error extrayendo ZIP:', error);
+      return null;
+    }
+  };
+
+  // 📦 Manejar selección de archivo en modal (soporta .txt y .zip)
+  const handleModalFileSelect = async (file: File) => {
     const error = validateFile(file);
     if (error) {
       setUploadError(error);
       setFileToUpload(null);
       return;
     }
+
+    // Si es ZIP, extraer el .txt automáticamente
+    if (file.name.endsWith('.zip')) {
+      setUploadError(null);
+      setStatus('Extrayendo chat del ZIP...');
+
+      const extractedFile = await extractTxtFromZip(file);
+      if (!extractedFile) {
+        setUploadError('No se encontró un archivo .txt dentro del ZIP. Asegúrate de exportar el chat de WhatsApp.');
+        setFileToUpload(null);
+        setStatus('');
+        return;
+      }
+
+      setFileToUpload(extractedFile);
+      setStatus('');
+      return;
+    }
+
     setUploadError(null);
     setFileToUpload(file);
   };
@@ -687,7 +730,7 @@ export default function Home() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".txt"
+                    accept=".txt,.zip"
                     className="hidden"
                     onChange={handleFileChange}
                     disabled={isUploading}
@@ -3498,7 +3541,7 @@ export default function Home() {
                     </svg>
                   </div>
                   <h2 className="text-xl font-bold text-white mb-1">Sube tu chat de WhatsApp</h2>
-                  <p className="text-sm text-slate-400">Arrastra el archivo .txt o haz clic para seleccionar</p>
+                  <p className="text-sm text-slate-400">Arrastra el archivo .txt o .zip, o haz clic para seleccionar</p>
                 </div>
 
                 {/* Zona de Drag & Drop */}
@@ -3534,7 +3577,7 @@ export default function Home() {
                   <input
                     ref={modalFileInputRef}
                     type="file"
-                    accept=".txt"
+                    accept=".txt,.zip"
                     className="hidden"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
@@ -3585,7 +3628,7 @@ export default function Home() {
                       </div>
                       <div>
                         <p className="font-medium text-slate-300">Haz clic o arrastra tu archivo</p>
-                        <p className="text-sm text-slate-500">Solo archivos .txt exportados de WhatsApp</p>
+                        <p className="text-sm text-slate-500">Archivos .txt o .zip de WhatsApp</p>
                       </div>
                     </div>
                   )}
