@@ -1955,17 +1955,17 @@ export default function Home() {
                             </svg>
                           </div>
                           <div className="flex-1">
-                            <p className="text-sm font-bold text-white">Hazle cualquier pregunta a la IA</p>
+                            <p className="text-sm font-bold text-white">Pregúntale lo que quieras a la IA</p>
                             <p className="text-xs text-purple-300">
                               {demoAsked
                                 ? `🔮 Analizó ${result.length.toLocaleString()} caracteres para responder`
-                                : 'Prueba con 1 pregunta gratis'
+                                : 'La IA leyó tu conversación completa'
                               }
                             </p>
                           </div>
                           {!demoAsked && (
-                            <div className="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 animate-pulse">
-                              <span className="text-[10px] font-bold text-emerald-300">1 GRATIS</span>
+                            <div className="px-3 py-1 rounded-full bg-purple-500/20 border border-purple-500/40">
+                              <span className="text-[10px] font-bold text-purple-300">✨ PRO</span>
                             </div>
                           )}
                         </div>
