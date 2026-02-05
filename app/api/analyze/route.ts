@@ -171,16 +171,21 @@ export async function POST(req: Request) {
     console.log("🎯 MODE:", isFullMode ? "FULL" : "DEMO");
     console.log("👀 PREVIEW:", text.slice(0, 300));
 
-    // ✂️ LÍMITE DE SEGURIDAD: Máximo 150,000 caracteres (~37k tokens)
-    // GPT-4o-mini tiene 128k context, esto permite chats muy grandes
-    // Costo aprox: $0.15/1M tokens input = ~$0.006 por chat grande
-    const MAX_CHARS = 150000;
+    // ✂️ LÍMITES DIFERENTES SEGÚN MODO:
+    // WhatsApp chats tienen ratio ~1:1 caracteres:tokens por emojis y formato
+    // GPT-4o-mini = 128k tokens, reservamos ~8k para prompt del sistema
+    // - DEMO: 80,000 caracteres (~80k tokens, seguro)
+    // - FULL (Pagado): 100,000 caracteres (~100k tokens, con margen)
+    const MAX_CHARS_DEMO = 80000;
+    const MAX_CHARS_FULL = 100000;
+    const MAX_CHARS = isFullMode ? MAX_CHARS_FULL : MAX_CHARS_DEMO;
+
     let processedText = text;
     let wasTruncated = false;
 
     if (text.length > MAX_CHARS) {
       wasTruncated = true;
-      // Tomar los últimos 40k caracteres (lo más reciente del chat)
+      // Tomar los últimos N caracteres (lo más reciente del chat)
       processedText = text.slice(-MAX_CHARS);
       console.log(`⚠️ Chat truncado de ${length} a ${MAX_CHARS} caracteres (tomando mensajes más recientes)`);
     }
