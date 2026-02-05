@@ -1866,17 +1866,31 @@ export default function Home() {
                               </span>
                             </div>
 
-                            {/* Descripción con GRADIENT OVERLAY real */}
-                            <div className="relative h-12 overflow-hidden">
-                              {/* Texto base - primeras palabras visibles */}
-                              <p className="text-sm text-slate-300 leading-relaxed">
-                                {pattern.description}
-                              </p>
-                              {/* Gradient overlay que oculta progresivamente */}
+                            {/* Descripción con BLUR REAL estilo Silicon Valley */}
+                            <div className="relative overflow-hidden">
+                              {/* Texto con blur real aplicado */}
+                              <div className="flex flex-wrap">
+                                {/* Primeras palabras visibles */}
+                                <span className="text-sm text-slate-300">
+                                  {pattern.description.split(' ').slice(0, 5).join(' ')}
+                                </span>
+                                {/* Resto con blur real */}
+                                <span
+                                  className="text-sm text-slate-300 ml-1"
+                                  style={{
+                                    filter: 'blur(4px)',
+                                    userSelect: 'none',
+                                    WebkitUserSelect: 'none'
+                                  }}
+                                >
+                                  {pattern.description.split(' ').slice(5, 15).join(' ')}
+                                </span>
+                              </div>
+                              {/* Gradient fade final */}
                               <div
-                                className="absolute inset-0 pointer-events-none"
+                                className="absolute right-0 top-0 bottom-0 w-16 pointer-events-none"
                                 style={{
-                                  background: 'linear-gradient(to bottom, transparent 0%, rgba(15, 23, 42, 0.3) 25%, rgba(15, 23, 42, 0.7) 50%, rgba(15, 23, 42, 0.95) 75%, rgb(15, 23, 42) 100%)'
+                                  background: 'linear-gradient(to right, transparent, rgb(15, 23, 42))'
                                 }}
                               />
                             </div>
