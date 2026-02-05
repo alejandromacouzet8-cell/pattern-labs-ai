@@ -4167,8 +4167,8 @@ function ChatBox({
                     )}
                   </div>
                 </div>
-                {/* CTA inline después de la última respuesta si no hay créditos */}
-                {idx === chatHistory.length - 1 && credits <= 0 && (
+                {/* CTA inline después de la última respuesta si no hay créditos (solo cuando termina la animación) */}
+                {idx === chatHistory.length - 1 && credits <= 0 && !isAnimating && (
                   <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-fuchsia-500/20 border border-purple-500/40">
                     <div className="flex flex-col sm:flex-row items-center gap-3">
                       <div className="flex-1 text-center sm:text-left">
