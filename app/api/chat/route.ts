@@ -326,23 +326,55 @@ EJEMPLOS DE RESPUESTAS QUE GENERAN "WOW":
 ❌ "Hay buena comunicación" (muy genérico)
 ❌ "Parece que se llevan bien" (vago)
 
-FORMATO (texto plano, sin markdown):
+FORMATO DE RESPUESTA (texto plano, pero estructurado para impactar):
 
-[RESPUESTA DIRECTA - Impactante, específica, con dato sorpresa]
+═══════════════════════════════════════════════════════════
+ESTRUCTURA OBLIGATORIA - SIGUE ESTE ORDEN:
+═══════════════════════════════════════════════════════════
 
-Lo que descubrí en el chat:
-• "[Cita textual corta]" - [Nombre] dijo esto [contexto]. Esto revela [insight].
-• [Observación específica con número o patrón concreto]
-• [Detalle que el usuario probablemente no había notado]
+1️⃣ HEADLINE CON DATO BOMBA (primera línea, impactante):
+Empieza con un número o porcentaje que enganche. Ejemplos:
+- "Basándome en ${stats.totalMessages} mensajes: 78% de probabilidad de que sí te quiere."
+- "Encontré 847 veces que [Nombre] dijo 'te amo' vs 203 tuyas. Pero esto no es malo..."
+- "El indicador de reciprocidad está en 6.8/10. Aquí está el por qué:"
 
-Mi lectura profunda:
-[2-3 oraciones que conectan los puntos y explican el "por qué" detrás del patrón. Sé directo pero empático.]
+2️⃣ DATOS CLAVE EN NÚMEROS (4-6 stats específicos):
+📊 Los números que importan:
+• [Nombre] dijo "te amo/te quiero": X veces
+• [Otro nombre] lo dijo: Y veces
+• Quién inicia conversaciones: [Nombre] X% de las veces
+• Tiempo promedio de respuesta: [dato si lo tienes]
+• Hora más activa de [Nombre]: [hora]
+• Total de mensajes analizados: ${stats.totalMessages}
 
-${stats.totalMessages > 0 ? `📊 Los números: ${stats.participants[0]?.name || 'Uno'} envió ${stats.participants[0]?.messageCount || 0} mensajes vs ${stats.participants[1]?.name || 'otro'} con ${stats.participants[1]?.messageCount || 0}. Pero cantidad ≠ interés. Lo que importa es QUIÉN inicia, QUIÉN profundiza, y QUIÉN sostiene emocionalmente.` : ''}
+3️⃣ LA CITA QUE REVELA TODO (obligatorio):
+Busca UN mensaje específico que sea revelador y cítalo:
+"El [fecha aproximada], [Nombre] escribió: '[cita textual del chat]'"
+→ Esto revela que [interpretación].
 
-Si quieres mejorar esto:
-→ [Acción ESPECÍFICA y realista, no "comunícate más"]
-→ [Segunda acción concreta basada en lo observado]
+4️⃣ LO QUE ENCONTRÉ (3-4 hallazgos con emojis):
+💚 [Señal positiva con evidencia específica]
+💚 [Otra señal positiva]
+⚠️ [Señal de atención - algo a observar]
+💚 o ⚠️ [Otro hallazgo relevante]
+
+5️⃣ MI LECTURA PROFUNDA (2-3 oraciones):
+Conecta los puntos. Explica el "por qué" detrás de los patrones.
+Sé honesto pero empático. No tengas miedo de decir verdades incómodas.
+
+6️⃣ VEREDICTO FINAL CON SCORE:
+🎯 Mi veredicto: [Respuesta directa a la pregunta en 1 oración]
+Índice de [lo que preguntaron]: X.X/10
+→ [Qué significa ese score en 1 línea]
+
+7️⃣ SI QUIEREN MEJORAR (opcional, 2 acciones):
+→ [Acción específica y realista]
+→ [Segunda acción basada en lo observado]
+
+═══════════════════════════════════════════════════════════
+IMPORTANTE: USA LOS NÚMEROS REALES DE LAS ESTADÍSTICAS DE ARRIBA.
+No inventes datos. Si no tienes un dato específico, omítelo.
+═══════════════════════════════════════════════════════════
 
 PROHIBIDO:
 - Diagnosticar ("es narcisista", "tiene ansiedad", "es tóxico")
@@ -374,7 +406,7 @@ ${question}
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.4,  // Un poco más creativo para análisis profundo
-      max_tokens: 900,   // Más espacio para análisis detallado
+      max_tokens: 1500,  // Más espacio para respuestas estructuradas con datos
       messages: [
         {
           role: "user",
