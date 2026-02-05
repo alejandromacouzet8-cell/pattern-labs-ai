@@ -2700,21 +2700,43 @@ export default function Home() {
                   </li>
                 </ul>
 
-                <button
-                  type="button"
-                  onClick={handleCheckoutSingle}
-                  disabled={isPaying}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-6 py-4 text-base font-bold text-slate-900 bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-500 hover:to-cyan-500 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-60"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                  {isPaying ? 'Redirigiendo a pago...' : 'Desbloquear análisis pro'}
-                </button>
-
-                <p className="text-[10px] text-center text-slate-500 mt-3">
-                  Pago seguro con Stripe · Satisfacción garantizada
-                </p>
+                {hasAccess ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={openUploadModal}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-6 py-4 text-base font-bold text-slate-900 bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-500 hover:to-cyan-500 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      Subir chat
+                    </button>
+                    <p className="text-[10px] text-center text-emerald-400 mt-3 flex items-center justify-center gap-1">
+                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      Ya tienes acceso PRO activado
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleCheckoutSingle}
+                      disabled={isPaying}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-6 py-4 text-base font-bold text-slate-900 bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-500 hover:to-cyan-500 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-60"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      {isPaying ? 'Redirigiendo a pago...' : 'Desbloquear análisis pro'}
+                    </button>
+                    <p className="text-[10px] text-center text-slate-500 mt-3">
+                      Pago seguro con Stripe · Satisfacción garantizada
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           </div>
