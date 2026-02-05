@@ -214,6 +214,67 @@ function calculateChatStats(chatText: string): ChatStats {
   return { totalMessages, participants, totalWords, dateRange: { first: firstDate, last: lastDate }, phraseCounts };
 }
 
+/* =======================
+   Función para calcular SCORE BASE desde estadísticas
+   Esto garantiza consistencia entre DEMO y FULL
+======================= */
+
+function calculateBaselineScore(stats: ChatStats): { score: number; breakdown: string[] } {
+  const breakdown: string[] = [];
+  let score = 5; // Base neutral
+
+  // Solo aplicar para chats 1-a-1 con 2 participantes
+  if (stats.participants.length !== 2) {
+    return { score: 5, breakdown: ['Chat grupal - score neutral'] };
+  }
+
+  const [p1, p2] = stats.participants;
+  const total = stats.totalMessages;
+
+  // 1. BALANCE DE MENSAJES (±2 puntos)
+  // 50/50 = +2, 70/30 = +0, 90/10 = -2
+  const ratio = Math.min(p1.messageCount, p2.messageCount) / Math.max(p1.messageCount, p2.messageCount);
+  const balanceScore = (ratio - 0.5) * 4; // -2 a +2
+  score += balanceScore;
+  breakdown.push(`Balance mensajes: ${Math.round(ratio * 100)}% → ${balanceScore > 0 ? '+' : ''}${balanceScore.toFixed(1)}`);
+
+  // 2. FRASES POSITIVAS (hasta +2 puntos)
+  const loveCount = stats.phraseCounts?.find(p =>
+    ['te amo', 'te quiero', 'i love you', 'love you'].includes(p.phrase)
+  )?.total || 0;
+  const gratitudeCount = stats.phraseCounts?.find(p =>
+    ['gracias', 'thank'].includes(p.phrase)
+  )?.total || 0;
+  const laughCount = stats.phraseCounts?.find(p =>
+    ['jajaj', 'jeje', 'haha', 'lol', '😂', '🤣'].includes(p.phrase)
+  )?.total || 0;
+
+  // Normalizar por cada 1000 mensajes
+  const lovePerK = (loveCount / total) * 1000;
+  const positiveBonus = Math.min(2, (lovePerK / 10) + (gratitudeCount > 50 ? 0.5 : 0) + (laughCount > 100 ? 0.5 : 0));
+  score += positiveBonus;
+  breakdown.push(`Frases positivas: ${loveCount} "te amo/quiero" → +${positiveBonus.toFixed(1)}`);
+
+  // 3. EMOJIS DE CARIÑO (hasta +1 punto)
+  const heartCount = stats.phraseCounts?.filter(p =>
+    ['❤', '😍', '🥰', '😘', '💕', '💗', '💖'].includes(p.phrase)
+  ).reduce((sum, p) => sum + p.total, 0) || 0;
+  const heartBonus = Math.min(1, heartCount / 200);
+  score += heartBonus;
+  breakdown.push(`Emojis cariño: ${heartCount} → +${heartBonus.toFixed(1)}`);
+
+  // 4. LONGITUD DE CONVERSACIÓN (estabilidad) (hasta +1 punto)
+  // Más mensajes = más data = relación más establecida
+  const lengthBonus = Math.min(1, total / 10000);
+  score += lengthBonus;
+  breakdown.push(`Mensajes totales: ${total} → +${lengthBonus.toFixed(1)}`);
+
+  // Clamp entre 1 y 10
+  score = Math.max(1, Math.min(10, score));
+
+  return { score: Math.round(score * 10) / 10, breakdown };
+}
+
 type ChatType = {
   type: "1-on-1" | "group";
   participants: string[];
@@ -451,8 +512,13 @@ export async function POST(req: Request) {
     }
 
     /* =======================
-       LLAMADA CORRECTA A OPENAI
-       (ESTE ERA EL BUG)
+       CALCULAR SCORE BASE (consistencia DEMO/FULL)
+    ======================= */
+    const baselineScore = calculateBaselineScore(chatStats);
+    console.log("📊 SCORE BASE CALCULADO:", baselineScore);
+
+    /* =======================
+       LLAMADA A OPENAI
     ======================= */
 
     const completion = await openai.chat.completions.create({
@@ -467,6 +533,18 @@ export async function POST(req: Request) {
           role: "user",
           content: `
 MODO: ${isFullMode ? "FULL (devuelve EXACTAMENTE 8 patrones con evidencia: 2 Emoción, 2 Dinámica, 2 Fortaleza, 2 Riesgo)" : "DEMO (devuelve EXACTAMENTE 6 patrones: los 3 primeros son los MÁS impactantes y serán 100% visibles, los 3 siguientes aparecerán como preview bloqueado. Mezcla categorías: Emoción, Dinámica, Fortaleza, y al menos 1 Riesgo)"}
+
+═══════════════════════════════════════════════════════════
+🎯 SCORE BASE CALCULADO POR EL SISTEMA: ${baselineScore.score}/10
+═══════════════════════════════════════════════════════════
+Este score fue calculado matemáticamente desde las estadísticas:
+${baselineScore.breakdown.map(b => `  • ${b}`).join('\n')}
+
+⚠️ REGLA CRÍTICA DEL SCORE:
+- Tu "patternScore.value" DEBE estar entre ${Math.max(1, baselineScore.score - 1.5).toFixed(1)} y ${Math.min(10, baselineScore.score + 1.5).toFixed(1)}
+- Puedes ajustar ±1.5 puntos según el TONO de los mensajes (si son fríos o cálidos)
+- Pero NO puedes salirte de ese rango. El score base es objetivo.
+═══════════════════════════════════════════════════════════
 
 ═══════════════════════════════════════════════════════════
 📊 ESTADÍSTICAS EXACTAS DEL CHAT COMPLETO (USA ESTOS NÚMEROS)
