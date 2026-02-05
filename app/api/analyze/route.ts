@@ -354,10 +354,11 @@ Lee TODO el chat cuidadosamente. Busca:
 
 ## REGLAS DE PATRONES
 
-MODO DEMO (3 patrones):
-- 1 Emoción: El patrón emocional MÁS interesante que encontraste
-- 1 Dinámica: Cómo funciona la comunicación entre ellos
-- 1 Fortaleza: Algo positivo que destaque
+MODO DEMO (6 patrones):
+- Los primeros 3 patrones serán 100% visibles para el usuario (estos deben ser los MÁS impactantes)
+- Los últimos 3 patrones aparecerán como "preview bloqueado" para generar curiosidad
+- Distribución: 1-2 Emoción, 1-2 Dinámica, 1-2 Fortaleza, 1-2 Riesgo
+- El orden importa: pon los 3 mejores primero
 
 MODO FULL (8 patrones):
 - 2 Emoción, 2 Dinámica, 2 Fortaleza, 2 Riesgo
@@ -378,7 +379,10 @@ MODO FULL (8 patrones):
 ❌ "Necesitan hablar más" (obvio)
 
 ## IMPORTANTE PARA DEMO
-En modo DEMO, los 3 patrones deben ser TAN buenos que el usuario NECESITE ver los otros 5. Muestra lo mejor que encontraste, no guardes lo bueno para FULL.
+En modo DEMO devuelves 6 patrones:
+- Los primeros 3: deben ser TAN buenos que el usuario diga "wow" al leerlos. Son 100% visibles.
+- Los siguientes 3: aparecerán como "preview bloqueado" - sus TÍTULOS serán visibles pero la descripción estará borrosa. Haz que los títulos generen MUCHA curiosidad para que el usuario quiera desbloquear.
+- Ejemplo de título que genera curiosidad para patrón bloqueado: "El mensaje del 15 de enero que cambió todo", "Por qué [Nombre] evita hablar después de las 10pm", "La frase que [Nombre] repite 23 veces"
 `;
 
 /* =======================
@@ -462,7 +466,7 @@ export async function POST(req: Request) {
         {
           role: "user",
           content: `
-MODO: ${isFullMode ? "FULL (devuelve EXACTAMENTE 8 patrones con evidencia: 2 Emoción, 2 Dinámica, 2 Fortaleza, 2 Riesgo)" : "DEMO (devuelve EXACTAMENTE 3 patrones: 1 Emoción, 1 Dinámica, 1 Fortaleza)"}
+MODO: ${isFullMode ? "FULL (devuelve EXACTAMENTE 8 patrones con evidencia: 2 Emoción, 2 Dinámica, 2 Fortaleza, 2 Riesgo)" : "DEMO (devuelve EXACTAMENTE 6 patrones: los 3 primeros son los MÁS impactantes y serán 100% visibles, los 3 siguientes aparecerán como preview bloqueado. Mezcla categorías: Emoción, Dinámica, Fortaleza, y al menos 1 Riesgo)"}
 
 ═══════════════════════════════════════════════════════════
 📊 ESTADÍSTICAS EXACTAS DEL CHAT COMPLETO (USA ESTOS NÚMEROS)

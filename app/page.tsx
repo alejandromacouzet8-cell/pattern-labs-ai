@@ -1743,6 +1743,8 @@ export default function Home() {
 
               <div className="space-y-4">
                 {result.patterns && [...result.patterns]
+                  // In demo mode, only show first 3 patterns (rest are for blurred preview)
+                  .slice(0, hasAccess ? undefined : 3)
                   // Sort: Riesgo first, then Dinámica/Emoción, then Fortaleza
                   .sort((a, b) => {
                     const order: Record<string, number> = { Riesgo: 0, Emoción: 1, Dinámica: 2, Fortaleza: 3 };
@@ -1815,7 +1817,7 @@ export default function Home() {
                 {/* ============================================= */}
                 {/* DEMO IRRESISTIBLE - CONTENIDO CON BLUR FOMO */}
                 {/* ============================================= */}
-                {!hasAccess && result.patterns && result.patterns.length === 3 && (
+                {!hasAccess && result.patterns && result.patterns.length > 3 && (
                   <>
                     {/* PATRONES BLOQUEADOS - TÍTULOS VISIBLES, DESCRIPCIÓN BLURREADA */}
                     <div className="relative mt-2">
@@ -1825,16 +1827,22 @@ export default function Home() {
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
                           <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
                         </span>
-                        +5 patrones detectados en TU chat
+                        +{result.patterns.length - 3 + 2} patrones detectados en TU chat
                       </div>
 
                       {/* Patrones con título visible y descripción con gradient blur real */}
                       <div className="space-y-3 pt-4">
-                        {[
-                          { title: "Señales de distanciamiento emocional", cat: "Riesgo", catColor: "bg-orange-500/20 text-orange-200 border-orange-500/30", desc: "Se detectan 3 momentos donde hay frialdad repentina después de conversaciones importantes. El análisis muestra un patrón de..." },
-                          { title: "Patrón de reconciliación cíclica", cat: "Dinámica", catColor: "bg-amber-500/20 text-amber-200 border-amber-500/30", desc: "Cada 2-3 semanas se repite un ciclo de tensión → silencio → reconciliación. Este patrón indica que hay una dinámica de..." },
-                          { title: "Picos de vulnerabilidad sincronizada", cat: "Fortaleza", catColor: "bg-emerald-500/20 text-emerald-200 border-emerald-500/30", desc: "Hay 5 momentos donde ambos bajan la guardia al mismo tiempo y la conexión emocional alcanza su punto más alto cuando..." },
-                        ].map((pattern, idx) => (
+                        {result.patterns.slice(3).map((pattern, idx) => {
+                          // Category-specific styling for locked patterns
+                          const catColors: Record<string, string> = {
+                            Riesgo: 'bg-rose-500/20 text-rose-200 border-rose-500/30',
+                            Emoción: 'bg-cyan-500/20 text-cyan-200 border-cyan-500/30',
+                            Dinámica: 'bg-amber-500/20 text-amber-200 border-amber-500/30',
+                            Fortaleza: 'bg-emerald-500/20 text-emerald-200 border-emerald-500/30',
+                          };
+                          const catColor = catColors[pattern.category] || catColors.Dinámica;
+
+                          return (
                           <div
                             key={idx}
                             className="rounded-xl bg-slate-900/80 px-4 py-3 border border-slate-800 relative overflow-hidden group hover:border-purple-500/50 transition-all cursor-pointer"
@@ -1853,8 +1861,8 @@ export default function Home() {
                             {/* Título y categoría 100% VISIBLES */}
                             <div className="flex items-center justify-between mb-2 relative z-10">
                               <p className="font-bold text-white text-sm">{pattern.title}</p>
-                              <span className={`rounded-full px-2.5 py-1 text-xs font-semibold border ${pattern.catColor}`}>
-                                {pattern.cat}
+                              <span className={`rounded-full px-2.5 py-1 text-xs font-semibold border ${catColor}`}>
+                                {pattern.category}
                               </span>
                             </div>
 
@@ -1862,7 +1870,7 @@ export default function Home() {
                             <div className="relative h-12 overflow-hidden">
                               {/* Texto base - primeras palabras visibles */}
                               <p className="text-sm text-slate-300 leading-relaxed">
-                                {pattern.desc}
+                                {pattern.description}
                               </p>
                               {/* Gradient overlay que oculta progresivamente */}
                               <div
@@ -1883,7 +1891,7 @@ export default function Home() {
                               </span>
                             </div>
                           </div>
-                        ))}
+                        )})}
                         {/* Contador de más patrones */}
                         <div className="flex items-center justify-center gap-2 py-2 text-sm text-purple-300">
                           <span>...y 2 patrones más</span>
