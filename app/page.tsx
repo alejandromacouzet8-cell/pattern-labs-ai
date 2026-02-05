@@ -1950,6 +1950,13 @@ export default function Home() {
                 credits={credits}
                 onConsumeCredit={consumeCredit}
                 onUnlockClick={handleCheckoutSingle}
+                onNewChat={() => {
+                  setResult(null);
+                  setSelectedFile(null);
+                  setDemoAsked(false);
+                  setDemoQuestion('');
+                  setSavedDemoQuestion('');
+                }}
               />
             </div>
           </div>
@@ -3755,6 +3762,7 @@ function ChatBox({
   credits,
   onConsumeCredit,
   onUnlockClick,
+  onNewChat,
 }: {
   analysis: string;
   fullChat: string;
@@ -3768,6 +3776,7 @@ function ChatBox({
   credits: number;
   onConsumeCredit: () => void;
   onUnlockClick: () => void;
+  onNewChat?: () => void;
 }) {
   const [question, setQuestion] = useState('');
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
@@ -4189,11 +4198,13 @@ function ChatBox({
                         <button
                           type="button"
                           onClick={() => {
-                            // Limpiar todo el estado guardado para empezar de cero
+                            // Limpiar resultado y chat history, pero mantener acceso
                             window.localStorage.removeItem('patternlabs_result');
                             window.localStorage.removeItem('patternlabs_chat_history');
-                            window.localStorage.removeItem('patternlabs_access');
-                            window.location.reload();
+                            // Resetear estados locales
+                            onNewChat?.();
+                            // Scroll suave arriba
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
                           }}
                           className="inline-flex items-center gap-2 rounded-lg bg-slate-700/80 hover:bg-slate-600/80 px-4 py-2 text-sm font-medium text-slate-200 transition-all"
                         >
