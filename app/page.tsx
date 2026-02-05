@@ -485,8 +485,6 @@ export default function Home() {
   };
 
   const handleCheckoutSingle = async () => {
-    console.log('🔥 handleCheckoutSingle CALLED');
-    alert('Botón presionado - conectando con Stripe...');
     try {
       setIsPaying(true);
       setStatus('Creando sesión de pago segura…');
