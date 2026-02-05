@@ -4290,9 +4290,19 @@ function ChatBox({
               </div>
             )}
 
+            <div className="relative">
+              {/* Indicador de scroll inferior - gradiente fade */}
+              <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-slate-900 via-slate-900/80 to-transparent z-10 flex items-end justify-center pb-1 lg:hidden">
+                <div className="flex items-center gap-1 text-[10px] text-purple-300/70 animate-bounce">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                  <span>Desliza para ver más</span>
+                </div>
+              </div>
             <div
               ref={chatContainerRef}
-              className="space-y-4 max-h-[400px] overflow-y-auto pr-2 scroll-smooth"
+              className="space-y-4 max-h-[400px] overflow-y-auto pr-2 scroll-smooth pb-8"
               style={{ scrollBehavior: 'smooth' }}
             >
               <p className="text-sm font-semibold text-purple-300 flex items-center gap-2 sticky top-0 bg-slate-900/95 py-2 -mt-2 -mx-2 px-2 z-10">
@@ -4464,6 +4474,7 @@ function ChatBox({
                 </div>
               </div>
             )}
+            </div>
             </div>
           </div>
         )}
