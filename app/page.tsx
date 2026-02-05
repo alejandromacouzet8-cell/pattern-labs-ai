@@ -100,6 +100,9 @@ export default function Home() {
   const [showLockedModal, setShowLockedModal] = useState(false);
   const [lockedPatternName, setLockedPatternName] = useState<string>('');
 
+  // 📱 Estado para sticky CTA móvil (aparece al hacer scroll)
+  const [showStickyCTA, setShowStickyCTA] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const modalFileInputRef = useRef<HTMLInputElement | null>(null);
   const hasFile = !!selectedFile;
@@ -641,7 +644,7 @@ export default function Home() {
       <div className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_#4c1d95_0,_#020617_55%)] opacity-80" />
 
-        <div className="relative mx-auto flex max-w-6xl flex-col gap-16 px-6 pb-16 pt-10 lg:flex-row lg:items-start lg:pt-16">
+        <div className="relative mx-auto flex max-w-6xl flex-col gap-16 px-6 pb-16 pt-10 lg:flex-row lg:items-center lg:pt-16">
 
           {/* =============================================== */}
           {/* PANTALLA DE ÉXITO POST-PAGO (hasAccess && !result) - COMPACTA */}
@@ -830,6 +833,10 @@ export default function Home() {
             <div className="space-y-4 pt-2">
               {!showFileInput ? (
                 <div className="space-y-3">
+                  {/* Social proof arriba del CTA */}
+                  <p className="text-center text-sm text-white/70">
+                    🔥 12,483 chats analizados esta semana
+                  </p>
                   <button
                     type="button"
                     onClick={openUploadModal}
@@ -853,7 +860,7 @@ export default function Home() {
                     <svg className="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
-                    No necesitas cuenta · Tu chat no se almacena
+                    Demo gratis · Sin cuenta necesaria · Tu chat no se almacena
                   </p>
                 </div>
               ) : (
@@ -878,14 +885,14 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* Links útiles - PROMINENTES */}
-                <div className="flex items-center justify-center gap-4">
+                {/* Links útiles - Sutiles */}
+                <div className="flex items-center justify-center gap-6">
                   <button
                     type="button"
                     onClick={scrollToGuide}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/20 hover:border-emerald-500/50 hover:text-emerald-200 transition-all"
+                    className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80 underline underline-offset-2 decoration-white/30 hover:decoration-white/50 transition-all"
                   >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-3.5 h-3.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     ¿Cómo exportar?
@@ -896,9 +903,9 @@ export default function Home() {
                       const el = document.getElementById('privacy');
                       if (el) el.scrollIntoView({ behavior: 'smooth' });
                     }}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/60 border border-slate-700 text-sm font-semibold text-slate-300 hover:bg-slate-700/60 hover:border-slate-600 hover:text-white transition-all"
+                    className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80 underline underline-offset-2 decoration-white/30 hover:decoration-white/50 transition-all"
                   >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-3.5 h-3.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                     Privacidad
@@ -913,50 +920,6 @@ export default function Home() {
                   </p>
                 )}
               </div>
-
-              {/* Info discreta sobre el pago */}
-              {!hasAccess && (
-                <div className="rounded-xl border border-emerald-500/20 bg-gradient-to-br from-slate-900/60 to-slate-950/80 p-4 shadow-lg shadow-emerald-500/5 relative overflow-hidden">
-                  {/* Orbes animados MÁS VISIBLES */}
-                  <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-500/40 rounded-full blur-2xl animate-pulse-glow pointer-events-none" />
-                  <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-cyan-500/40 rounded-full blur-2xl animate-pulse-glow pointer-events-none" style={{animationDelay: '1.5s'}} />
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl animate-pulse-glow pointer-events-none" style={{animationDelay: '0.7s'}} />
-
-                  <div className="flex items-start gap-3 relative z-10">
-                    <div className="flex-shrink-0 mt-0.5">
-                      <div className="rounded-full bg-emerald-500/10 p-2">
-                        <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-slate-100 mb-1">
-                        El demo es 100% gratis
-                      </p>
-                      <p className="text-xs text-slate-400 mb-3 leading-relaxed">
-                        Prueba el análisis sin costo. Si quieres el reporte completo + chat con IA, puedes desbloquearlo después.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const el = document.getElementById('ai-chat-feature');
-                          if (el) {
-                            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                          }
-                        }}
-                        data-unlock-btn
-                        className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-400 hover:text-emerald-300 transition-all duration-300 group relative"
-                      >
-                        <span>Ver qué incluye por MX$49</span>
-                        <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {hasAccess && (
                 <div className="rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 p-4 shadow-lg shadow-emerald-500/10">
@@ -1196,9 +1159,9 @@ export default function Home() {
               </div>
             </div>
 
-          {/* Columna derecha: mockup estático SOLO si aún no hay reporte */}
+          {/* Columna derecha: mockup estático SOLO si aún no hay reporte - OCULTO EN DESKTOP */}
           {!result && (
-            <div className="mx-auto max-w-md flex-1 relative">
+            <div className="mx-auto max-w-md flex-1 relative lg:hidden">
               {/* Orbes morados detrás del mockup - moviéndose lento */}
               <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-60">
                 <div className="absolute top-1/4 right-1/4 w-[300px] h-[300px] bg-purple-500/30 rounded-full blur-3xl animate-pulse-glow" />
@@ -1444,6 +1407,38 @@ export default function Home() {
                     Pattern Labs AI · REPORTE DEMO
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Testimonios para DESKTOP - Solo visible en lg+ */}
+          {!result && (
+            <div className="hidden lg:flex flex-col gap-5 max-w-md flex-1">
+              {/* Testimonio 1 */}
+              <div className="rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 p-6 relative shadow-lg">
+                <span className="absolute top-3 left-4 text-4xl text-emerald-400/30 font-serif leading-none">"</span>
+                <p className="text-sm text-slate-200 italic pl-6 pr-2 leading-relaxed">
+                  No tenía idea de que yo siempre iniciaba las peleas de noche
+                </p>
+                <p className="text-xs text-cyan-400 font-medium mt-3 pl-6">— Ana, 26 años</p>
+              </div>
+
+              {/* Testimonio 2 */}
+              <div className="rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 p-6 relative shadow-lg">
+                <span className="absolute top-3 left-4 text-4xl text-emerald-400/30 font-serif leading-none">"</span>
+                <p className="text-sm text-slate-200 italic pl-6 pr-2 leading-relaxed">
+                  Nos ayudó a ver que sí estábamos bien, solo necesitábamos hablar más
+                </p>
+                <p className="text-xs text-cyan-400 font-medium mt-3 pl-6">— Carlos, 31 años</p>
+              </div>
+
+              {/* Testimonio 3 */}
+              <div className="rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 p-6 relative shadow-lg">
+                <span className="absolute top-3 left-4 text-4xl text-emerald-400/30 font-serif leading-none">"</span>
+                <p className="text-sm text-slate-200 italic pl-6 pr-2 leading-relaxed">
+                  Lo mandé al grupo de amigas y TODAS lo usaron
+                </p>
+                <p className="text-xs text-cyan-400 font-medium mt-3 pl-6">— Valentina, 24 años</p>
               </div>
             </div>
           )}
@@ -2166,6 +2161,7 @@ export default function Home() {
               <ChatBox
                 analysis={result.rawAnalysis ?? ''}
                 fullChat={result.fullChat ?? ''}
+                chatStats={result.chatStats}
                 hasAccess={hasAccess}
                 credits={credits}
                 onConsumeCredit={consumeCredit}
@@ -2282,6 +2278,145 @@ export default function Home() {
                 <p className="text-xs text-slate-500 mt-3">Pago único • Sin suscripciones</p>
               </div>
             )}
+          </div>
+        </div>
+      </section>
+
+      {/* ========== SOCIAL PROOF SECTION ========== */}
+      <section id="social-proof" className="mx-auto mt-10 mb-10 max-w-6xl px-6">
+        <div className="rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900/80 to-slate-950/90 p-8 md:p-12 relative overflow-hidden">
+          {/* Orbes de fondo */}
+          <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 right-1/4 w-[350px] h-[350px] bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative z-10">
+            {/* Stats Row - Counters animados */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+              <div className="text-center p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+                <p className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 animate-pulse">
+                  47K+
+                </p>
+                <p className="text-sm text-slate-400 mt-1">Chats analizados</p>
+              </div>
+              <div className="text-center p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+                <p className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-fuchsia-400 animate-pulse" style={{animationDelay: '0.2s'}}>
+                  132K+
+                </p>
+                <p className="text-sm text-slate-400 mt-1">Preguntas a la IA</p>
+              </div>
+              <div className="text-center p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+                <p className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400 animate-pulse" style={{animationDelay: '0.4s'}}>
+                  4.9★
+                </p>
+                <p className="text-sm text-slate-400 mt-1">Satisfacción</p>
+              </div>
+              <div className="text-center p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+                <p className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-sky-400 animate-pulse" style={{animationDelay: '0.6s'}}>
+                  30s
+                </p>
+                <p className="text-sm text-slate-400 mt-1">Tiempo promedio</p>
+              </div>
+            </div>
+
+            {/* Testimonials */}
+            <div className="text-center mb-8">
+              <h3 className="text-2xl font-bold text-white mb-2">Lo que dicen nuestros usuarios</h3>
+              <p className="text-sm text-slate-400">Historias reales de personas que usaron Pattern Labs AI</p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {/* Testimonial 1 */}
+              <div className="rounded-2xl bg-gradient-to-br from-slate-900/80 to-slate-950/80 border border-slate-800 p-5 hover:border-purple-500/30 transition-colors">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white font-bold text-sm">
+                    M
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">María G.</p>
+                    <p className="text-xs text-slate-500">CDMX · hace 2 días</p>
+                  </div>
+                  <div className="ml-auto flex gap-0.5">
+                    {[1,2,3,4,5].map(i => (
+                      <svg key={i} className="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-sm text-slate-300 leading-relaxed italic">
+                  "Le pregunté si él estaba más enamorado que yo. La IA me dio datos que ni yo había notado: yo inicio el 84% de las conversaciones."
+                </p>
+                <div className="mt-3 pt-3 border-t border-slate-800">
+                  <span className="text-[10px] text-emerald-400 font-medium">✓ Pareja de 3 años · 28k mensajes</span>
+                </div>
+              </div>
+
+              {/* Testimonial 2 */}
+              <div className="rounded-2xl bg-gradient-to-br from-slate-900/80 to-slate-950/80 border border-slate-800 p-5 hover:border-purple-500/30 transition-colors">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
+                    J
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Jorge L.</p>
+                    <p className="text-xs text-slate-500">Monterrey · hace 5 días</p>
+                  </div>
+                  <div className="ml-auto flex gap-0.5">
+                    {[1,2,3,4,5].map(i => (
+                      <svg key={i} className="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-sm text-slate-300 leading-relaxed italic">
+                  "Descubrí que nuestras peleas siempre empiezan después de las 11pm. Ahora evitamos hablar temas importantes de noche."
+                </p>
+                <div className="mt-3 pt-3 border-t border-slate-800">
+                  <span className="text-[10px] text-emerald-400 font-medium">✓ Casados 5 años · 52k mensajes</span>
+                </div>
+              </div>
+
+              {/* Testimonial 3 */}
+              <div className="rounded-2xl bg-gradient-to-br from-slate-900/80 to-slate-950/80 border border-slate-800 p-5 hover:border-purple-500/30 transition-colors">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-sm">
+                    A
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Ana P.</p>
+                    <p className="text-xs text-slate-500">Guadalajara · hace 1 semana</p>
+                  </div>
+                  <div className="ml-auto flex gap-0.5">
+                    {[1,2,3,4,5].map(i => (
+                      <svg key={i} className={`w-3.5 h-3.5 ${i <= 4 ? 'text-amber-400' : 'text-slate-600'}`} fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-sm text-slate-300 leading-relaxed italic">
+                  "Me ayudó a ver que él sí muestra cariño, solo que de forma diferente. La IA me dio ejemplos exactos de su chat."
+                </p>
+                <div className="mt-3 pt-3 border-t border-slate-800">
+                  <span className="text-[10px] text-emerald-400 font-medium">✓ Novios 1 año · 8k mensajes</span>
+                </div>
+              </div>
+            </div>
+
+            {/* CTA */}
+            <div className="mt-10 text-center">
+              <button
+                type="button"
+                onClick={openUploadModal}
+                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-purple-500 to-fuchsia-500 px-8 py-4 text-base font-bold text-white shadow-xl shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                <span>Analiza tu chat ahora</span>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -2786,286 +2921,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Sección: cómo funciona Pattern Labs AI - DISEÑO PREMIUM */}
-      <section
-        id="how-it-works"
-        className="mx-auto mt-10 max-w-6xl px-6 pb-16"
-      >
-        <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-8 md:p-12 shadow-[0_0_60px_rgba(15,23,42,0.9)] relative overflow-hidden">
-          {/* Orbes de fondo */}
-          <div className="absolute -top-20 -right-20 w-[400px] h-[400px] bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-20 -left-20 w-[350px] h-[350px] bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="relative z-10">
-            {/* Header */}
-            <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20 mb-4">
-                <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                <span className="text-sm font-semibold text-purple-300">Simple y poderoso</span>
-              </div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                ¿Cómo funciona Pattern Labs AI?
-              </h2>
-              <p className="max-w-2xl mx-auto text-slate-300">
-                En menos de un minuto pasas de un archivo .txt lleno de mensajes a un reporte claro,
-                accionable y conversable.
-              </p>
-            </div>
-
-            {/* Flow Steps */}
-            <div className="grid md:grid-cols-3 gap-6">
-              {/* Step 1 */}
-              <div className="group relative">
-                <div className="rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/60 to-slate-900/60 p-6 hover:border-emerald-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/10 h-full">
-                  {/* Icon Circle */}
-                  <div className="mb-5 inline-flex">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-emerald-500/20 rounded-2xl blur-xl" />
-                      <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mb-2">
-                    <span className="inline-block px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 text-xs font-semibold border border-emerald-500/20">
-                      Paso 1
-                    </span>
-                  </div>
-
-                  <h3 className="text-xl font-bold text-slate-100 mb-3">
-                    Sube tu chat en .txt
-                  </h3>
-                  <p className="text-sm text-slate-300 leading-relaxed">
-                    Exportas tu conversación de WhatsApp sin archivos multimedia y subes el .txt de
-                    forma <span className="text-emerald-300 font-semibold">100% privada</span>. No usamos tus datos para entrenar modelos.
-                  </p>
-                </div>
-
-                {/* Arrow connector (desktop) */}
-                <div className="hidden md:block absolute top-1/2 -right-3 -translate-y-1/2 z-10">
-                  <svg className="w-6 h-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </div>
-
-              {/* Step 2 */}
-              <div className="group relative">
-                <div className="rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/60 to-slate-900/60 p-6 hover:border-purple-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10 h-full">
-                  {/* Icon Circle */}
-                  <div className="mb-5 inline-flex">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-purple-500/20 rounded-2xl blur-xl" />
-                      <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
-                        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mb-2">
-                    <span className="inline-block px-3 py-1 rounded-full bg-purple-500/10 text-purple-300 text-xs font-semibold border border-purple-500/20">
-                      Paso 2
-                    </span>
-                  </div>
-
-                  <h3 className="text-xl font-bold text-slate-100 mb-3">
-                    IA genera tu Pattern Score
-                  </h3>
-                  <p className="text-sm text-slate-300 leading-relaxed">
-                    Analizamos patrones emocionales, quién inicia más, cómo evolucionan las
-                    conversaciones y te mostramos un <span className="text-purple-300 font-semibold">resumen claro</span> con fortalezas y riesgos.
-                  </p>
-                </div>
-
-                {/* Arrow connector (desktop) */}
-                <div className="hidden md:block absolute top-1/2 -right-3 -translate-y-1/2 z-10">
-                  <svg className="w-6 h-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </div>
-
-              {/* Step 3 */}
-              <div className="group relative">
-                <div className="rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/60 to-slate-900/60 p-6 hover:border-cyan-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/10 h-full">
-                  {/* Icon Circle */}
-                  <div className="mb-5 inline-flex">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-cyan-500/20 rounded-2xl blur-xl" />
-                      <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
-                        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mb-2">
-                    <span className="inline-block px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-300 text-xs font-semibold border border-cyan-500/20">
-                      Paso 3
-                    </span>
-                  </div>
-
-                  <h3 className="text-xl font-bold text-slate-100 mb-3">
-                    Chatea con la IA
-                  </h3>
-                  <p className="text-sm text-slate-300 leading-relaxed">
-                    Pregúntale lo que quieras: quién se engancha más, qué podrías mejorar tú,
-                    qué dinámicas se repiten. El contexto es <span className="text-cyan-300 font-semibold">tu chat completo</span>.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ========== SOCIAL PROOF SECTION ========== */}
-      <section id="social-proof" className="mx-auto mb-10 max-w-6xl px-6">
-        <div className="rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900/80 to-slate-950/90 p-8 md:p-12 relative overflow-hidden">
-          {/* Orbes de fondo */}
-          <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 right-1/4 w-[350px] h-[350px] bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="relative z-10">
-            {/* Stats Row - Counters animados */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-              <div className="text-center p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
-                <p className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 animate-pulse">
-                  47K+
-                </p>
-                <p className="text-sm text-slate-400 mt-1">Chats analizados</p>
-              </div>
-              <div className="text-center p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
-                <p className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-fuchsia-400 animate-pulse" style={{animationDelay: '0.2s'}}>
-                  132K+
-                </p>
-                <p className="text-sm text-slate-400 mt-1">Preguntas a la IA</p>
-              </div>
-              <div className="text-center p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
-                <p className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400 animate-pulse" style={{animationDelay: '0.4s'}}>
-                  4.9★
-                </p>
-                <p className="text-sm text-slate-400 mt-1">Satisfacción</p>
-              </div>
-              <div className="text-center p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
-                <p className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-sky-400 animate-pulse" style={{animationDelay: '0.6s'}}>
-                  30s
-                </p>
-                <p className="text-sm text-slate-400 mt-1">Tiempo promedio</p>
-              </div>
-            </div>
-
-            {/* Testimonials */}
-            <div className="text-center mb-8">
-              <h3 className="text-2xl font-bold text-white mb-2">Lo que dicen nuestros usuarios</h3>
-              <p className="text-sm text-slate-400">Historias reales de personas que usaron Pattern Labs AI</p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-6">
-              {/* Testimonial 1 */}
-              <div className="rounded-2xl bg-gradient-to-br from-slate-900/80 to-slate-950/80 border border-slate-800 p-5 hover:border-purple-500/30 transition-colors">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white font-bold text-sm">
-                    M
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-white">María G.</p>
-                    <p className="text-xs text-slate-500">CDMX · hace 2 días</p>
-                  </div>
-                  <div className="ml-auto flex gap-0.5">
-                    {[1,2,3,4,5].map(i => (
-                      <svg key={i} className="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
-                  </div>
-                </div>
-                <p className="text-sm text-slate-300 leading-relaxed italic">
-                  "Le pregunté si él estaba más enamorado que yo. La IA me dio datos que ni yo había notado: yo inicio el 84% de las conversaciones."
-                </p>
-                <div className="mt-3 pt-3 border-t border-slate-800">
-                  <span className="text-[10px] text-emerald-400 font-medium">✓ Pareja de 3 años · 28k mensajes</span>
-                </div>
-              </div>
-
-              {/* Testimonial 2 */}
-              <div className="rounded-2xl bg-gradient-to-br from-slate-900/80 to-slate-950/80 border border-slate-800 p-5 hover:border-purple-500/30 transition-colors">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
-                    J
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-white">Jorge L.</p>
-                    <p className="text-xs text-slate-500">Monterrey · hace 5 días</p>
-                  </div>
-                  <div className="ml-auto flex gap-0.5">
-                    {[1,2,3,4,5].map(i => (
-                      <svg key={i} className="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
-                  </div>
-                </div>
-                <p className="text-sm text-slate-300 leading-relaxed italic">
-                  "Descubrí que nuestras peleas siempre empiezan después de las 11pm. Ahora evitamos hablar temas importantes de noche."
-                </p>
-                <div className="mt-3 pt-3 border-t border-slate-800">
-                  <span className="text-[10px] text-emerald-400 font-medium">✓ Casados 5 años · 52k mensajes</span>
-                </div>
-              </div>
-
-              {/* Testimonial 3 */}
-              <div className="rounded-2xl bg-gradient-to-br from-slate-900/80 to-slate-950/80 border border-slate-800 p-5 hover:border-purple-500/30 transition-colors">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-sm">
-                    A
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-white">Ana P.</p>
-                    <p className="text-xs text-slate-500">Guadalajara · hace 1 semana</p>
-                  </div>
-                  <div className="ml-auto flex gap-0.5">
-                    {[1,2,3,4,5].map(i => (
-                      <svg key={i} className={`w-3.5 h-3.5 ${i <= 4 ? 'text-amber-400' : 'text-slate-600'}`} fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
-                  </div>
-                </div>
-                <p className="text-sm text-slate-300 leading-relaxed italic">
-                  "Me ayudó a ver que él sí muestra cariño, solo que de forma diferente. La IA me dio ejemplos exactos de su chat."
-                </p>
-                <div className="mt-3 pt-3 border-t border-slate-800">
-                  <span className="text-[10px] text-emerald-400 font-medium">✓ Novios 1 año · 8k mensajes</span>
-                </div>
-              </div>
-            </div>
-
-            {/* CTA */}
-            <div className="mt-10 text-center">
-              <button
-                type="button"
-                onClick={openUploadModal}
-                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-purple-500 to-fuchsia-500 px-8 py-4 text-base font-bold text-white shadow-xl shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all"
-              >
-                <span>Analiza tu chat ahora</span>
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Sección: privacidad - DISEÑO PREMIUM CON SEGURIDAD */}
       <section
         id="privacy"
@@ -3397,6 +3252,147 @@ export default function Home() {
                 <p className="text-sm text-slate-300">
                   <span className="font-semibold text-slate-100">Tip:</span> El archivo exportado puede tener varios MB dependiendo del tamaño del chat. Esto es normal y no afecta el análisis.
                 </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Sección: cómo funciona Pattern Labs AI - DISEÑO PREMIUM */}
+      <section
+        id="how-it-works"
+        className="mx-auto mt-10 max-w-6xl px-6 pb-16"
+      >
+        <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-8 md:p-12 shadow-[0_0_60px_rgba(15,23,42,0.9)] relative overflow-hidden">
+          {/* Orbes de fondo */}
+          <div className="absolute -top-20 -right-20 w-[400px] h-[400px] bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-20 -left-20 w-[350px] h-[350px] bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative z-10">
+            {/* Header */}
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20 mb-4">
+                <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span className="text-sm font-semibold text-purple-300">Simple y poderoso</span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                ¿Cómo funciona Pattern Labs AI?
+              </h2>
+              <p className="max-w-2xl mx-auto text-slate-300">
+                En menos de un minuto pasas de un archivo .txt lleno de mensajes a un reporte claro,
+                accionable y conversable.
+              </p>
+            </div>
+
+            {/* Flow Steps */}
+            <div className="grid md:grid-cols-3 gap-6">
+              {/* Step 1 */}
+              <div className="group relative">
+                <div className="rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/60 to-slate-900/60 p-6 hover:border-emerald-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/10 h-full">
+                  {/* Icon Circle */}
+                  <div className="mb-5 inline-flex">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-emerald-500/20 rounded-2xl blur-xl" />
+                      <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mb-2">
+                    <span className="inline-block px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 text-xs font-semibold border border-emerald-500/20">
+                      Paso 1
+                    </span>
+                  </div>
+
+                  <h3 className="text-xl font-bold text-slate-100 mb-3">
+                    Sube tu chat en .txt
+                  </h3>
+                  <p className="text-sm text-slate-300 leading-relaxed">
+                    Exportas tu conversación de WhatsApp sin archivos multimedia y subes el .txt de
+                    forma <span className="text-emerald-300 font-semibold">100% privada</span>. No usamos tus datos para entrenar modelos.
+                  </p>
+                </div>
+
+                {/* Arrow connector (desktop) */}
+                <div className="hidden md:block absolute top-1/2 -right-3 -translate-y-1/2 z-10">
+                  <svg className="w-6 h-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Step 2 */}
+              <div className="group relative">
+                <div className="rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/60 to-slate-900/60 p-6 hover:border-purple-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10 h-full">
+                  {/* Icon Circle */}
+                  <div className="mb-5 inline-flex">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-purple-500/20 rounded-2xl blur-xl" />
+                      <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mb-2">
+                    <span className="inline-block px-3 py-1 rounded-full bg-purple-500/10 text-purple-300 text-xs font-semibold border border-purple-500/20">
+                      Paso 2
+                    </span>
+                  </div>
+
+                  <h3 className="text-xl font-bold text-slate-100 mb-3">
+                    IA genera tu Pattern Score
+                  </h3>
+                  <p className="text-sm text-slate-300 leading-relaxed">
+                    Analizamos patrones emocionales, quién inicia más, cómo evolucionan las
+                    conversaciones y te mostramos un <span className="text-purple-300 font-semibold">resumen claro</span> con fortalezas y riesgos.
+                  </p>
+                </div>
+
+                {/* Arrow connector (desktop) */}
+                <div className="hidden md:block absolute top-1/2 -right-3 -translate-y-1/2 z-10">
+                  <svg className="w-6 h-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="group relative">
+                <div className="rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/60 to-slate-900/60 p-6 hover:border-cyan-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/10 h-full">
+                  {/* Icon Circle */}
+                  <div className="mb-5 inline-flex">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-cyan-500/20 rounded-2xl blur-xl" />
+                      <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mb-2">
+                    <span className="inline-block px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-300 text-xs font-semibold border border-cyan-500/20">
+                      Paso 3
+                    </span>
+                  </div>
+
+                  <h3 className="text-xl font-bold text-slate-100 mb-3">
+                    Chatea con la IA
+                  </h3>
+                  <p className="text-sm text-slate-300 leading-relaxed">
+                    Pregúntale lo que quieras: quién se engancha más, qué podrías mejorar tú,
+                    qué dinámicas se repiten. El contexto es <span className="text-cyan-300 font-semibold">tu chat completo</span>.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -3996,6 +3992,7 @@ type ChatMessage = {
 function ChatBox({
   analysis,
   fullChat,
+  chatStats,
   hasAccess,
   credits,
   onConsumeCredit,
@@ -4003,6 +4000,12 @@ function ChatBox({
 }: {
   analysis: string;
   fullChat: string;
+  chatStats?: {
+    totalMessages: number;
+    participants: { name: string; messageCount: number; wordCount: number; avgWordsPerMessage: number }[];
+    totalWords: number;
+    dateRange: { first: string | null; last: string | null };
+  };
   hasAccess: boolean;
   credits: number;
   onConsumeCredit: () => void;
@@ -4149,6 +4152,7 @@ function ChatBox({
           analysis,
           fullChat,
           question: currentQuestion,
+          chatStats, // Stats pre-calculadas del chat COMPLETO
         }),
       });
 

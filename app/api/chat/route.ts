@@ -10,10 +10,30 @@ const openai = new OpenAI({
 // GPT-4o-mini = 128k tokens, reservamos margen para prompt + stats
 const MAX_CHAT_CHARS = 80000;
 
+type ChatStats = {
+  totalMessages: number;
+  participants: {
+    name: string;
+    messageCount: number;
+    wordCount: number;
+    avgWordsPerMessage: number;
+    hourlyActivity?: Record<number, number>;
+    mostActiveHours?: string;
+  }[];
+  totalWords: number;
+  dateRange: { first: string | null; last: string | null };
+  phraseCounts?: {
+    phrase: string;
+    total: number;
+    byParticipant: Record<string, number>;
+  }[];
+};
+
 type ChatBody = {
   analysis: string;
   fullChat: string;
   question: string;
+  chatStats?: ChatStats; // Stats pre-calculadas del chat completo
 };
 
 /**
@@ -26,20 +46,20 @@ function calculateChatStats(chatText: string): {
   totalWords: number;
   dateRange: { first: string | null; last: string | null };
 } {
-  const lines = chatText.split('\n').filter(line => line.trim());
+  // Limpiar caracteres invisibles de WhatsApp (LTR mark, zero-width spaces, etc.)
+  const cleanLine = (line: string) => line.replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g, '').trim();
 
-  // Regex SUPER permisivo para capturar cualquier formato de WhatsApp
-  // Busca: [fecha/hora opcional] Nombre: mensaje
-  // El patrón clave es "Nombre: mensaje" después de algo que parece fecha/hora
+  const lines = chatText.split('\n').map(cleanLine).filter(line => line.length > 0);
+
+  // Regex para formatos de WhatsApp - SOLO matchear líneas que empiecen con fecha/hora
+  // Esto evita capturar contenido de mensajes como "**Título**: texto"
   const messagePatterns = [
-    // Formato con corchetes: [cualquier cosa] Nombre: mensaje
-    /^\[([^\]]+)\]\s*([^:]+):\s*(.+)$/,
-    // Formato estándar con guión: fecha/hora - Nombre: mensaje
-    /^(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})[,\s]*\d{1,2}:\d{2}[^-–]*[-–]\s*([^:]+):\s*(.+)$/,
-    // Formato solo con coma: fecha, hora, Nombre: mensaje
-    /^(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})[,\s]+\d{1,2}:\d{2}[^:]*:\s*(\d{2})?\s*([^:]+):\s*(.+)$/,
-    // Formato más simple: buscar patrón "Nombre: mensaje" después de números
-    /^[\d\/\-\.\s,:apmAPM\[\]]+[-–]?\s*([^:]{2,30}):\s*(.+)$/,
+    // Formato iOS/Android con corchetes: [15/12/24, 19:14:36] Nombre: mensaje
+    /^\[(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}[^\]]*)\]\s*([^:]+):\s*(.+)$/,
+    // Formato Android sin corchetes: 15/12/24, 19:14 - Nombre: mensaje
+    /^(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})[,\s]+\d{1,2}:\d{2}(?::\d{2})?\s*[-–]\s*([^:]+):\s*(.+)$/,
+    // Formato alternativo: 15/12/24 19:14:36 Nombre: mensaje
+    /^(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})[,\s]+\d{1,2}:\d{2}(?::\d{2})?\s+([^:]+):\s*(.+)$/,
   ];
 
   const participantStats: Record<string, { messageCount: number; wordCount: number }> = {};
@@ -49,7 +69,11 @@ function calculateChatStats(chatText: string): {
   let lastDate: string | null = null;
 
   // Debug: mostrar primeras líneas para ver formato
-  console.log("📝 Primeras 3 líneas del chat:", lines.slice(0, 3));
+  console.log("📝 Primeras 5 líneas del chat:");
+  lines.slice(0, 5).forEach((line, i) => console.log(`  [${i}]: "${line}"`));
+
+  // Debug: contar líneas que NO matchean ningún patrón
+  let unmatchedLines = 0;
 
   for (const line of lines) {
     // Probar cada patrón hasta encontrar uno que coincida
@@ -57,45 +81,36 @@ function calculateChatStats(chatText: string): {
       const pattern = messagePatterns[patternIdx];
       const match = line.match(pattern);
       if (match) {
-        // Los grupos varían según el patrón
-        let name: string;
-        let message: string;
-        let date: string | null = null;
+        // Todos los patrones tienen estructura: (fecha, nombre, mensaje)
+        const date = match[1];
+        const name = match[2].trim();
+        const message = match[3]?.trim() || '';
 
-        if (patternIdx === 3) {
-          // Último patrón: solo tiene (nombre, mensaje)
-          name = match[1].trim();
-          message = match[2].trim();
-        } else if (patternIdx === 2 && match[4]) {
-          // Patrón con segundos extra
-          name = match[3].trim();
-          message = match[4].trim();
-          date = match[1];
-        } else {
-          // Patrones estándar: (fecha/contexto, nombre, mensaje)
-          date = match[1];
-          name = match[2].trim();
-          message = match[3]?.trim() || '';
+        // Validar que el nombre no sea contenido de mensaje (ej: **Título**)
+        if (name.startsWith('*') || name.startsWith('#') || name.startsWith('-') || name.length > 50) {
+          continue;
         }
 
         // Ignorar si no hay mensaje
         if (!message) continue;
 
-        // Ignorar mensajes del sistema
-        if (message.includes('<Media omitted>') ||
-            message.includes('omitido') ||
-            message.includes('Messages and calls are end-to-end encrypted') ||
-            message.includes('cifrados de extremo a extremo') ||
-            message.includes('image omitted') ||
-            message.includes('video omitted') ||
-            message.includes('audio omitted') ||
-            message.includes('sticker omitted') ||
-            message.includes('GIF omitted') ||
-            name.toLowerCase().includes('changed') ||
-            name.toLowerCase().includes('added') ||
-            name.toLowerCase().includes('left') ||
-            name.toLowerCase().includes('removed') ||
-            name.toLowerCase().includes('created group')) {
+        // Ignorar mensajes del sistema y media omitida
+        const lowerMessage = message.toLowerCase();
+        const lowerName = name.toLowerCase();
+        if (lowerMessage.includes('omitido') ||
+            lowerMessage.includes('omitida') ||  // "imagen omitida", "nota de voz omitida"
+            lowerMessage.includes('omitted') ||
+            lowerMessage.includes('cifrados de extremo a extremo') ||
+            lowerMessage.includes('end-to-end encrypted') ||
+            lowerMessage.includes('creaste el grupo') ||
+            lowerMessage.includes('created group') ||
+            lowerMessage.includes('cambiaste el nombre') ||
+            lowerMessage.includes('changed the subject') ||
+            lowerName.includes('changed') ||
+            lowerName.includes('added') ||
+            lowerName.includes('left') ||
+            lowerName.includes('removed') ||
+            lowerName.includes('created group')) {
           break;
         }
 
@@ -120,9 +135,19 @@ function calculateChatStats(chatText: string): {
         break;
       }
     }
+    // Si ningún patrón matcheó, contar como línea no parseada
+    if (!messagePatterns.some(p => p.test(line))) {
+      unmatchedLines++;
+    }
   }
 
-  console.log("📊 Estadísticas calculadas:", { totalMessages, participants: Object.keys(participantStats) });
+  console.log("📊 Estadísticas calculadas:", {
+    totalMessages,
+    participants: Object.keys(participantStats),
+    unmatchedLines,
+    totalLines: lines.length,
+    matchRate: `${Math.round((totalMessages / lines.length) * 100)}%`
+  });
 
   // Convertir a array ordenado por cantidad de mensajes
   const participants = Object.entries(participantStats)
@@ -144,7 +169,7 @@ function calculateChatStats(chatText: string): {
 
 export async function POST(req: Request) {
   try {
-    const { analysis, fullChat, question } = (await req.json()) as ChatBody;
+    const { analysis, fullChat, question, chatStats: preCalculatedStats } = (await req.json()) as ChatBody;
 
     if (!fullChat || !question) {
       return NextResponse.json(
@@ -153,20 +178,33 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✂️ Recortamos chat enorme para evitar errores
+    // 📊 USAR STATS PRE-CALCULADAS del chat COMPLETO (si vienen del analyze)
+    // Si no vienen, calcular del chat truncado (fallback)
+    let stats: ChatStats;
+    if (preCalculatedStats && preCalculatedStats.totalMessages > 0) {
+      console.log("📊 Usando stats PRE-CALCULADAS del chat completo:");
+      stats = preCalculatedStats;
+    } else {
+      console.log(`📊 Stats no disponibles, calculando del chat recibido (${fullChat.length.toLocaleString()} chars)...`);
+      stats = calculateChatStats(fullChat);
+    }
+    console.log("📊 Stats finales:", {
+      totalMessages: stats.totalMessages,
+      participants: stats.participants.map(p => `${p.name}: ${p.messageCount} msgs`),
+    });
+
+    // ✂️ Truncar chat para el contexto de la IA (pero stats ya son del chat completo)
     const trimmedChat =
       fullChat.length > MAX_CHAT_CHARS
         ? fullChat.slice(-MAX_CHAT_CHARS)
         : fullChat;
 
-    // 📊 PRE-CALCULAR ESTADÍSTICAS (precisión garantizada)
-    const stats = calculateChatStats(trimmedChat);
-    console.log("📊 Stats pre-calculadas:", {
-      totalMessages: stats.totalMessages,
-      participants: stats.participants.map(p => `${p.name}: ${p.messageCount} msgs`),
-    });
-
     // 📊 Formatear estadísticas para el prompt
+    const phraseStats = stats.phraseCounts?.slice(0, 15).map(p => {
+      const breakdown = Object.entries(p.byParticipant).map(([name, count]) => `${name}: ${count}`).join(', ');
+      return `  • "${p.phrase}": ${p.total} veces (${breakdown})`;
+    }).join('\n') || '';
+
     const statsForPrompt = `
 ═══════════════════════════════════════════════════════════
 📊 ESTADÍSTICAS PRE-CALCULADAS (NÚMEROS EXACTOS - USA ESTOS)
@@ -176,11 +214,18 @@ export async function POST(req: Request) {
 • Rango de fechas: ${stats.dateRange.first || 'N/A'} → ${stats.dateRange.last || 'N/A'}
 
 PARTICIPANTES (ordenados por cantidad de mensajes):
-${stats.participants.map((p, i) => `  ${i + 1}. ${p.name}: ${p.messageCount} mensajes, ${p.wordCount} palabras (promedio ${p.avgWordsPerMessage} palabras/mensaje)`).join('\n')}
+${stats.participants.map((p, i) => {
+  const hourInfo = (p as any).mostActiveHours ? ` | ${(p as any).mostActiveHours}` : '';
+  return `  ${i + 1}. ${p.name}: ${p.messageCount} mensajes, ${p.wordCount} palabras (promedio ${p.avgWordsPerMessage} palabras/mensaje)${hourInfo}`;
+}).join('\n')}
+
+${phraseStats ? `CONTEO DE FRASES EN TODO EL CHAT:\n${phraseStats}` : ''}
 
 ⚠️ IMPORTANTE: Estos números fueron calculados por el sistema y son EXACTOS.
-Cuando el usuario pregunte "quién manda más mensajes" o estadísticas similares,
-USA ESTOS NÚMEROS directamente. NO intentes contar manualmente.
+- Cuando pregunten "quién manda más mensajes" → USA ESTOS NÚMEROS
+- Cuando pregunten "cuántas veces dijeron X" → USA EL CONTEO DE FRASES de arriba
+- Cuando pregunten "a qué hora" o "cuándo" → USA LOS HORARIOS de arriba
+- NO intentes contar manualmente, estos datos son del chat COMPLETO
 ═══════════════════════════════════════════════════════════
 `;
 
@@ -188,6 +233,23 @@ USA ESTOS NÚMEROS directamente. NO intentes contar manualmente.
 Eres un ANALISTA DE COMUNICACIÓN DE NIVEL ÉLITE. Tu misión: hacer que el usuario diga "¿Cómo supo eso?" con cada respuesta.
 
 No eres un chatbot genérico. Eres el mejor amigo brutalmente honesto que también tiene un doctorado en psicología relacional. Hablas directo, con ejemplos específicos del chat, y siempre sorprendes con observaciones que el usuario no había notado.
+
+═══════════════════════════════════════════════════════════
+🚨 REGLA CRÍTICA: PERSPECTIVA OBJETIVA
+═══════════════════════════════════════════════════════════
+- NO sabes quién es el usuario. Puede ser cualquiera de los participantes o un tercero.
+- NUNCA uses "tú", "contigo", "te", "tu relación" refiriéndote a un participante específico.
+- SIEMPRE habla de los participantes por su NOMBRE: "Alejandro muestra...", "La relación entre María y Juan..."
+- Habla como un analista externo observando el chat, NO como si hablaras con uno de ellos.
+- Si el usuario pregunta "¿me quiere?" → responde sobre ambos participantes o pide aclaración.
+
+EJEMPLOS:
+❌ MAL: "Él te busca mucho, lo que indica que te quiere"
+✅ BIEN: "Alejandro busca mucho a María, lo que indica interés de su parte"
+
+❌ MAL: "Tu pareja muestra señales de..."
+✅ BIEN: "La dinámica entre Alejandro y María muestra..."
+═══════════════════════════════════════════════════════════
 
 ${statsForPrompt}
 

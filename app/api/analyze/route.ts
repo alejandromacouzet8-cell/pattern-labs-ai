@@ -28,6 +28,192 @@ type EvidenceItem = {
   context: string;
 };
 
+type ParticipantStats = {
+  name: string;
+  messageCount: number;
+  wordCount: number;
+  avgWordsPerMessage: number;
+  hourlyActivity?: Record<number, number>; // hora (0-23) -> cantidad de mensajes
+  mostActiveHours?: string; // ej: "más activo entre 10pm-2am"
+};
+
+type PhraseCounts = {
+  phrase: string;
+  total: number;
+  byParticipant: Record<string, number>;
+};
+
+type ChatStats = {
+  totalMessages: number;
+  participants: ParticipantStats[];
+  totalWords: number;
+  dateRange: { first: string | null; last: string | null };
+  phraseCounts?: PhraseCounts[]; // Conteo de frases importantes
+};
+
+/* =======================
+   Función para calcular estadísticas del chat COMPLETO
+   Esto garantiza conteos precisos independientemente del truncado
+======================= */
+
+function calculateChatStats(chatText: string): ChatStats {
+  // Limpiar caracteres invisibles de WhatsApp
+  const cleanLine = (line: string) => line.replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g, '').trim();
+  const lines = chatText.split('\n').map(cleanLine).filter(line => line.length > 0);
+
+  // Regex para formatos de WhatsApp - captura fecha/hora completa
+  const messagePatterns = [
+    /^\[(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}),?\s*(\d{1,2}):(\d{2})(?::\d{2})?\]?\s*([^:]+):\s*(.+)$/,
+    /^(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})[,\s]+(\d{1,2}):(\d{2})(?::\d{2})?\s*[-–]\s*([^:]+):\s*(.+)$/,
+  ];
+
+  const participantStats: Record<string, {
+    messageCount: number;
+    wordCount: number;
+    hourlyActivity: Record<number, number>;
+  }> = {};
+  let totalMessages = 0;
+  let totalWords = 0;
+  let firstDate: string | null = null;
+  let lastDate: string | null = null;
+
+  for (const line of lines) {
+    for (const pattern of messagePatterns) {
+      const match = line.match(pattern);
+      if (match) {
+        const date = match[1];
+        const hour = parseInt(match[2], 10);
+        const name = match[4].trim();
+        const message = match[5]?.trim() || '';
+
+        // Validar que el nombre no sea contenido de mensaje
+        if (name.startsWith('*') || name.startsWith('#') || name.startsWith('-') || name.length > 50) {
+          continue;
+        }
+
+        if (!message) continue;
+
+        // Ignorar mensajes del sistema y media
+        const lowerMessage = message.toLowerCase();
+        const lowerName = name.toLowerCase();
+        if (lowerMessage.includes('omitido') ||
+            lowerMessage.includes('omitida') ||
+            lowerMessage.includes('omitted') ||
+            lowerMessage.includes('cifrados de extremo a extremo') ||
+            lowerMessage.includes('end-to-end encrypted') ||
+            lowerMessage.includes('creaste el grupo') ||
+            lowerMessage.includes('cambiaste el nombre') ||
+            lowerName.includes('changed') ||
+            lowerName.includes('added') ||
+            lowerName.includes('left')) {
+          break;
+        }
+
+        if (date) {
+          if (!firstDate) firstDate = date;
+          lastDate = date;
+        }
+
+        const words = message.split(/\s+/).filter(w => w.length > 0);
+        const wordCount = words.length;
+
+        if (!participantStats[name]) {
+          participantStats[name] = { messageCount: 0, wordCount: 0, hourlyActivity: {} };
+        }
+
+        participantStats[name].messageCount++;
+        participantStats[name].wordCount += wordCount;
+
+        // Registrar actividad por hora
+        if (!isNaN(hour) && hour >= 0 && hour <= 23) {
+          participantStats[name].hourlyActivity[hour] = (participantStats[name].hourlyActivity[hour] || 0) + 1;
+        }
+
+        totalMessages++;
+        totalWords += wordCount;
+        break;
+      }
+    }
+  }
+
+  // Función para encontrar las horas más activas
+  const getMostActiveHours = (hourlyActivity: Record<number, number>): string => {
+    const entries = Object.entries(hourlyActivity).map(([h, c]) => ({ hour: parseInt(h), count: c }));
+    if (entries.length === 0) return "sin datos de horario";
+
+    entries.sort((a, b) => b.count - a.count);
+    const topHours = entries.slice(0, 3).map(e => {
+      const h = e.hour;
+      const period = h >= 12 ? 'pm' : 'am';
+      const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      return `${hour12}${period}`;
+    });
+    return `más activo: ${topHours.join(', ')}`;
+  };
+
+  const participants = Object.entries(participantStats)
+    .map(([name, stats]) => ({
+      name,
+      messageCount: stats.messageCount,
+      wordCount: stats.wordCount,
+      avgWordsPerMessage: stats.messageCount > 0 ? Math.round(stats.wordCount / stats.messageCount * 10) / 10 : 0,
+      hourlyActivity: stats.hourlyActivity,
+      mostActiveHours: getMostActiveHours(stats.hourlyActivity),
+    }))
+    .sort((a, b) => b.messageCount - a.messageCount);
+
+  // 📊 CONTAR FRASES IMPORTANTES EN TODO EL CHAT
+  const phrasesToCount = [
+    'te amo', 'te quiero', 'i love you', 'love you',
+    'perdón', 'perdona', 'lo siento', 'sorry',
+    'gracias', 'thank',
+    'te extraño', 'te extrañ', 'miss you',
+    'buenos días', 'buenas noches', 'good morning', 'good night',
+    'jajaj', 'jeje', 'haha', 'lol', '😂', '🤣',
+    '❤', '😍', '🥰', '😘', '💕', '💗', '💖',
+    '?', // preguntas
+  ];
+
+  const phraseCounts: PhraseCounts[] = [];
+
+  for (const phrase of phrasesToCount) {
+    const byParticipant: Record<string, number> = {};
+    let total = 0;
+
+    // Contar en cada mensaje por participante
+    for (const line of lines) {
+      for (const pattern of messagePatterns) {
+        const match = line.match(pattern);
+        if (match) {
+          const name = match[4]?.trim() || match[2]?.trim();
+          const message = (match[5] || match[3] || '').toLowerCase();
+
+          if (name && message) {
+            // Contar ocurrencias de la frase en este mensaje
+            const regex = new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+            const matches = message.match(regex);
+            if (matches) {
+              const count = matches.length;
+              byParticipant[name] = (byParticipant[name] || 0) + count;
+              total += count;
+            }
+          }
+          break;
+        }
+      }
+    }
+
+    if (total > 0) {
+      phraseCounts.push({ phrase, total, byParticipant });
+    }
+  }
+
+  // Ordenar por total descendente
+  phraseCounts.sort((a, b) => b.total - a.total);
+
+  return { totalMessages, participants, totalWords, dateRange: { first: firstDate, last: lastDate }, phraseCounts };
+}
+
 type ChatType = {
   type: "1-on-1" | "group";
   participants: string[];
@@ -70,6 +256,9 @@ type AnalyzeResult = {
   fullChat: string;
   truncated?: boolean;
   processedLength?: number;
+
+  // Estadísticas pre-calculadas del chat COMPLETO (antes de truncar)
+  chatStats?: ChatStats;
 };
 
 /* =======================
@@ -115,6 +304,13 @@ Lee TODO el chat cuidadosamente. Busca:
 - Diagnosticar ("narcisista", "depresión", "ansiedad")
 - Alarmar ("tóxico", "red flags", "manipulación")
 - Inventar cosas que NO están en el chat
+- Usar "tú", "contigo", "tu pareja" - NO sabes quién es el usuario
+
+## PERSPECTIVA OBJETIVA (MUY IMPORTANTE)
+- NO sabes quién subió el chat. Puede ser cualquier participante o un tercero.
+- SIEMPRE habla de los participantes por su NOMBRE, nunca como "tú" o "tu pareja".
+- Escribe como un analista externo: "María muestra...", "La relación entre Juan y Ana..."
+- NUNCA: "Tu pareja te ignora" → SÍ: "Pedro tiende a ignorar los mensajes de Laura"
 
 ## OBLIGATORIO
 - Cada afirmación DEBE tener evidencia del chat
@@ -220,6 +416,17 @@ export async function POST(req: Request) {
     console.log("🎯 MODE:", isFullMode ? "FULL" : "DEMO");
     console.log("👀 PREVIEW:", text.slice(0, 300));
 
+    // 📊 CALCULAR ESTADÍSTICAS DEL CHAT COMPLETO (antes de truncar)
+    console.log("📊 Calculando estadísticas del chat completo...");
+    const chatStats = calculateChatStats(text);
+    console.log("📊 STATS DEL CHAT COMPLETO:", {
+      totalMessages: chatStats.totalMessages,
+      totalWords: chatStats.totalWords,
+      participants: chatStats.participants.map(p => `${p.name}: ${p.messageCount} msgs, ${p.wordCount} palabras (${p.mostActiveHours})`),
+      dateRange: chatStats.dateRange,
+      topPhrases: chatStats.phraseCounts?.slice(0, 10).map(p => `"${p.phrase}": ${p.total} veces`),
+    });
+
     // ✂️ LÍMITES DIFERENTES SEGÚN MODO:
     // WhatsApp chats tienen ratio ~1:1 caracteres:tokens por emojis y formato
     // GPT-4o-mini = 128k tokens, reservamos ~8k para prompt del sistema
@@ -257,17 +464,36 @@ export async function POST(req: Request) {
           content: `
 MODO: ${isFullMode ? "FULL (devuelve EXACTAMENTE 8 patrones con evidencia: 2 Emoción, 2 Dinámica, 2 Fortaleza, 2 Riesgo)" : "DEMO (devuelve EXACTAMENTE 3 patrones: 1 Emoción, 1 Dinámica, 1 Fortaleza)"}
 
-Este es un chat exportado de WhatsApp${wasTruncated ? ' (mensajes más recientes debido al tamaño)' : ''}.
+═══════════════════════════════════════════════════════════
+📊 ESTADÍSTICAS EXACTAS DEL CHAT COMPLETO (USA ESTOS NÚMEROS)
+═══════════════════════════════════════════════════════════
+• Total de mensajes: ${chatStats.totalMessages}
+• Total de palabras: ${chatStats.totalWords}
+• Período: ${chatStats.dateRange.first || 'N/A'} → ${chatStats.dateRange.last || 'N/A'}
+
+PARTICIPANTES:
+${chatStats.participants.map((p, i) => `  ${i + 1}. ${p.name}: ${p.messageCount} mensajes (${Math.round(p.messageCount / chatStats.totalMessages * 100)}%), ${p.wordCount} palabras, promedio ${p.avgWordsPerMessage} palabras/msg | ${p.mostActiveHours || ''}`).join('\n')}
+
+CONTEO DE FRASES EN TODO EL CHAT:
+${chatStats.phraseCounts?.slice(0, 15).map(p => {
+  const breakdown = Object.entries(p.byParticipant).map(([name, count]) => `${name}: ${count}`).join(', ');
+  return `  • "${p.phrase}": ${p.total} veces total (${breakdown})`;
+}).join('\n') || 'Sin datos de frases'}
+
+⚠️ IMPORTANTE: Cuando menciones estadísticas en tu análisis, USA ESTOS NÚMEROS EXACTOS.
+NO inventes números - usa los datos reales de arriba.
+═══════════════════════════════════════════════════════════
+
+Este es un chat exportado de WhatsApp${wasTruncated ? ' (mostrando mensajes más recientes, pero las estadísticas son del chat COMPLETO)' : ''}.
 
 Reglas:
 - Cada línea es un mensaje
 - El nombre antes de ":" indica quién habla
 - El orden es cronológico
-- NO infieras más allá del texto
-${wasTruncated ? '- Este chat fue truncado automáticamente, analiza solo lo que se ve aquí' : ''}
+- SIEMPRE usa las estadísticas exactas de arriba, NO inventes números
 - ${isFullMode ? 'Incluye el campo "evidence" en cada patrón con una cita corta' : 'NO incluyas el campo "evidence" en los patrones'}
 
-CHAT:
+CHAT (${wasTruncated ? 'muestra reciente' : 'completo'}):
 ${processedText}
 `,
         },
@@ -280,22 +506,42 @@ ${processedText}
     console.log("🧠 AI RAW OUTPUT:", aiText);
 
     /* =======================
-       PARSEO ESTRICTO
+       PARSEO CON TOLERANCIA A ERRORES COMUNES
     ======================= */
 
     let parsed: any;
 
+    // Limpiar JSON de errores comunes de la IA (comas extra, etc.)
+    const cleanJson = (text: string) => {
+      return text
+        // Quitar comas antes de } o ]
+        .replace(/,(\s*[}\]])/g, '$1')
+        // Quitar comas dobles
+        .replace(/,,+/g, ',');
+    };
+
     try {
-      parsed = JSON.parse(aiText);
+      parsed = JSON.parse(cleanJson(aiText));
     } catch (err) {
       console.error("❌ JSON inválido devuelto por IA:", aiText);
-      return NextResponse.json(
-        {
-          error:
-            "La IA devolvió una respuesta inválida. Intenta nuevamente o sube otro chat.",
-        },
-        { status: 500 }
-      );
+      // Intentar extraer JSON del texto (a veces la IA agrega texto antes/después)
+      const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          parsed = JSON.parse(cleanJson(jsonMatch[0]));
+          console.log("✅ JSON recuperado después de limpieza");
+        } catch {
+          return NextResponse.json(
+            { error: "La IA devolvió una respuesta inválida. Intenta nuevamente." },
+            { status: 500 }
+          );
+        }
+      } else {
+        return NextResponse.json(
+          { error: "La IA devolvió una respuesta inválida. Intenta nuevamente." },
+          { status: 500 }
+        );
+      }
     }
 
     /* =======================
@@ -340,6 +586,9 @@ ${processedText}
       fullChat: processedText,
       truncated: wasTruncated,
       processedLength: processedText.length,
+
+      // Estadísticas pre-calculadas del chat COMPLETO (para Q&A preciso)
+      chatStats,
     };
 
     // Mensaje informativo si fue truncado
