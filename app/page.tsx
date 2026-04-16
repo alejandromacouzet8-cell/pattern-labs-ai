@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase/client';
 import JSZip from 'jszip';
 
 /** Flag solo para desarrollo (Next reemplaza esto en build) */
@@ -89,6 +91,11 @@ export default function Home() {
   const [isPaying, setIsPaying] = useState(false);
   const [hasAccess, setHasAccess] = useState(false);
 
+  // 🔐 Estado de autenticación
+  const [user, setUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+
   // 🔢 Créditos de preguntas a la IA (3 incluidos con el pago)
   const [credits, setCredits] = useState<number>(0);
 
@@ -125,6 +132,22 @@ export default function Home() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const modalFileInputRef = useRef<HTMLInputElement | null>(null);
   const hasFile = !!selectedFile;
+
+  // 🔐 Verificar sesión de Supabase al montar
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setUser(session?.user || null);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error checking session:', error);
+        setIsLoading(false);
+      }
+    };
+
+    checkSession();
+  }, []);
 
   // 🧠 Rehidratar acceso/credits/resultado desde localStorage
   useEffect(() => {
@@ -1254,8 +1277,10 @@ export default function Home() {
                   <svg className="w-4 h-4 text-purple-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                   </svg>
-                  <span className="text-sm font-bold text-purple-200">{result.length.toLocaleString()}</span>
-                  <span className="text-xs text-purple-300">caracteres analizados</span>
+                  <span className="text-sm font-bold text-purple-200">
+                    {result.truncated ? '80,000' : result.length.toLocaleString()}
+                  </span>
+                  <span className="text-xs text-purple-300">caracteres analizados (demo)</span>
                 </div>
               </div>
 
@@ -1382,7 +1407,7 @@ export default function Home() {
                     className="mt-1.5 text-[11px] font-bold text-purple-300 hover:text-purple-200 flex items-center gap-1 transition-colors"
                   >
                     <span>🚀</span>
-                    <span>Desbloquea Pro para analizar millones de caracteres →</span>
+                    <span>Desbloquea Pro para analizar los millones de caracteres de tu chat completo →</span>
                   </button>
                 </div>
               )}
@@ -1940,8 +1965,8 @@ export default function Home() {
               </div>
             )}
 
-            {/* Chat sobre el reporte */}
-            <div className="border-t border-slate-800 pt-6 chat-input-container">
+            {/* Chat sobre el reporte - Temporarily disabled */}
+            {/* <div className="border-t border-slate-800 pt-6 chat-input-container">
               <ChatBox
                 analysis={result.rawAnalysis ?? ''}
                 fullChat={result.fullChat ?? ''}
@@ -1951,19 +1976,17 @@ export default function Home() {
                 onConsumeCredit={consumeCredit}
                 onUnlockClick={handleCheckoutSingle}
                 onNewChat={() => {
-                  // Limpiar todo para empezar de cero como usuario nuevo
                   setResult(null);
                   setSelectedFile(null);
                   setDemoAsked(false);
                   setDemoQuestion('');
                   setSavedDemoQuestion('');
-                  // Reset acceso (tienen 0 créditos, deben pagar de nuevo)
                   setHasAccess(false);
                   setCredits(0);
                   window.localStorage.removeItem('patternlabs_access');
                 }}
               />
-            </div>
+            </div> */}
           </div>
         </section>
       )}
@@ -3747,606 +3770,10 @@ export default function Home() {
           </div>
         </div>
       )}
+      {/* {error && <p className="mt-3 text-sm text-rose-300 text-center">{error}</p>} */}
     </main>
   );
 }
 
-/**
- * ChatBox: barra para conversar sobre el análisis + respuesta larga
- */
-type ChatMessage = {
-  question: string;
-  answer: string;
-};
-
-function ChatBox({
-  analysis,
-  fullChat,
-  chatStats,
-  hasAccess,
-  credits,
-  onConsumeCredit,
-  onUnlockClick,
-  onNewChat,
-}: {
-  analysis: string;
-  fullChat: string;
-  chatStats?: {
-    totalMessages: number;
-    participants: { name: string; messageCount: number; wordCount: number; avgWordsPerMessage: number }[];
-    totalWords: number;
-    dateRange: { first: string | null; last: string | null };
-  };
-  hasAccess: boolean;
-  credits: number;
-  onConsumeCredit: () => void;
-  onUnlockClick: () => void;
-  onNewChat?: () => void;
-}) {
-  const [question, setQuestion] = useState('');
-  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const lastMessageRef = useRef<HTMLDivElement>(null);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
-  const [showScrollHint, setShowScrollHint] = useState(false);
-
-  // 🎬 Estados para animación premium de respuesta
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [displayedAnswer, setDisplayedAnswer] = useState('');
-  const [animationStep, setAnimationStep] = useState<'typing' | 'thinking' | 'revealing' | 'done'>('done');
-
-  // 📊 Estado para barra de progreso del chat (igual que el análisis)
-  const [chatProgress, setChatProgress] = useState(0);
-  const [chatProgressStep, setChatProgressStep] = useState(0);
-  const CHAT_STEPS = [
-    { label: 'Leyendo tu pregunta...', threshold: 0 },
-    { label: 'Analizando contexto del chat...', threshold: 30 },
-    { label: 'Procesando patrones relevantes...', threshold: 60 },
-    { label: 'Generando respuesta personalizada...', threshold: 85 },
-  ];
-
-  // 💾 Restaurar historial de chat desde localStorage
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const storedHistory = window.localStorage.getItem('patternlabs_chat_history');
-      if (storedHistory) {
-        const parsed = JSON.parse(storedHistory) as ChatMessage[];
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setChatHistory(parsed);
-          console.log('📦 Historial de chat restaurado:', parsed.length, 'mensajes');
-        }
-      }
-    } catch (err) {
-      console.error('Error restaurando historial de chat', err);
-    }
-  }, []);
-
-  // 💾 Guardar historial de chat en localStorage
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (chatHistory.length === 0) return;
-    try {
-      window.localStorage.setItem('patternlabs_chat_history', JSON.stringify(chatHistory));
-      console.log('💾 Historial guardado:', chatHistory.length, 'mensajes');
-    } catch (err) {
-      console.error('Error guardando historial de chat', err);
-    }
-  }, [chatHistory]);
-
-  // Auto-scroll DENTRO del contenedor del chat cuando llega nueva respuesta
-  useEffect(() => {
-    if (chatHistory.length > 0 && chatContainerRef.current && lastMessageRef.current) {
-      // Scroll dentro del contenedor, no de la página
-      setTimeout(() => {
-        if (lastMessageRef.current && chatContainerRef.current) {
-          // Calcular posición del último mensaje relativo al contenedor
-          const container = chatContainerRef.current;
-          const lastMessage = lastMessageRef.current;
-          const scrollTop = lastMessage.offsetTop - container.offsetTop - 20;
-          container.scrollTo({ top: scrollTop, behavior: 'smooth' });
-        }
-      }, 100);
-    }
-  }, [chatHistory.length]);
-
-  // Mostrar hint de scroll cuando hay más de 1 mensaje y el usuario no está al tope
-  useEffect(() => {
-    const container = chatContainerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      // Si hay scroll disponible y no está al inicio, mostrar hint
-      setShowScrollHint(container.scrollTop > 50 && chatHistory.length > 1);
-    };
-
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [chatHistory.length]);
-
-  // Log para debug
-  console.log('🎯 ChatBox render - hasAccess:', hasAccess, 'credits:', credits, 'historial:', chatHistory.length);
-
-  const handleAsk = async () => {
-    if (!question.trim()) return;
-
-    if (!hasAccess) {
-      setError(
-        'Para hacerle preguntas a la IA primero desbloquea tu análisis completo 🧠'
-      );
-      return;
-    }
-
-    if (credits <= 0) {
-      setError(
-        'Ya utilizaste tus 3 preguntas incluidas. Muy pronto podrás comprar más preguntas para seguir explorando tu chat. 🙌'
-      );
-      return;
-    }
-
-    const currentQuestion = question.trim();
-
-    try {
-      setLoading(true);
-      setError(null);
-      setQuestion(''); // Limpiar input inmediatamente
-
-      // 🎯 AGREGAR PREGUNTA AL HISTORIAL INMEDIATAMENTE
-      const newMessage = {
-        question: currentQuestion,
-        answer: '' // Vacío hasta que llegue la respuesta
-      };
-      setChatHistory(prevHistory => [...prevHistory, newMessage]);
-      onConsumeCredit(); // Consumir crédito inmediatamente
-
-      // Iniciar estado de "pensando"
-      setIsAnimating(true);
-      setAnimationStep('thinking');
-
-      // Scroll para mostrar la pregunta
-      setTimeout(() => {
-        if (chatContainerRef.current) {
-          chatContainerRef.current.scrollTo({
-            top: chatContainerRef.current.scrollHeight,
-            behavior: 'smooth'
-          });
-        }
-      }, 50);
-
-      console.log('📤 Enviando pregunta:', currentQuestion);
-
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        cache: 'no-store', // Evitar cache
-        body: JSON.stringify({
-          analysis,
-          fullChat,
-          question: currentQuestion,
-          chatStats, // Stats pre-calculadas del chat COMPLETO
-        }),
-      });
-
-      const data = await res.json();
-      console.log('📥 Respuesta recibida:', data.answer?.slice(0, 100));
-
-      // Completar barra al 100% cuando llega la respuesta
-      setChatProgress(100);
-      setChatProgressStep(4);
-
-      if (!res.ok) {
-        setError(data.error || 'Ocurrió un error al responder tu pregunta.');
-        setQuestion(currentQuestion); // Restaurar pregunta si hay error
-        setChatProgress(0);
-        setChatProgressStep(0);
-        return;
-      }
-
-      // 🎬 Iniciar animación de respuesta
-      const fullAnswer = data.answer || 'Sin respuesta';
-
-      // Cambiar de "thinking" a "revealing"
-      setDisplayedAnswer('');
-
-      // Pausa corta antes de empezar a revelar (200ms)
-      setTimeout(() => {
-        setAnimationStep('revealing');
-
-        // Revelar palabra por palabra - Mostrar primera palabra INMEDIATAMENTE
-        const words = fullAnswer.split(' ');
-        let currentWordIndex = 0;
-
-        // Mostrar primera palabra sin delay
-        setDisplayedAnswer(words[0] || '');
-        currentWordIndex = 1;
-
-        const revealInterval = setInterval(() => {
-          if (currentWordIndex < words.length) {
-            setDisplayedAnswer(prev => prev + ' ' + words[currentWordIndex]);
-            currentWordIndex++;
-          } else {
-            clearInterval(revealInterval);
-            // Actualizar el historial con la respuesta completa
-            setChatHistory(prevHistory => {
-              const updated = [...prevHistory];
-              if (updated.length > 0) {
-                updated[updated.length - 1].answer = fullAnswer;
-              }
-              return updated;
-            });
-            setAnimationStep('done');
-            setIsAnimating(false);
-            setDisplayedAnswer('');
-          }
-        }, 30); // 30ms entre palabras = más fluido
-      }, 200); // 200ms de pausa antes de revelar
-    } catch (err) {
-      console.error('❌ Error en chat:', err);
-      setError('Error de red o del servidor al responder tu pregunta.');
-      setQuestion(currentQuestion); // Restaurar pregunta si hay error
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Si no tiene acceso, no mostrar ChatBox aquí (la funcionalidad está arriba en el reporte demo)
-  if (!hasAccess) {
-    return null;
-  }
-
-  // Si tiene acceso, mostrar el chat funcional (con o sin créditos)
-  return (
-    <div className="rounded-2xl bg-gradient-to-br from-purple-950/40 via-slate-900 to-slate-950 p-6 border-2 border-purple-500/40 shadow-2xl shadow-purple-500/20 relative overflow-hidden">
-      {/* Orbes de fondo */}
-      <div className="absolute -top-20 -right-20 w-[200px] h-[200px] bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-20 -left-20 w-[200px] h-[200px] bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="relative z-10">
-        {/* Header prominente */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-white">Pregúntale a la IA</h3>
-              <p className="text-sm text-purple-300">La IA tiene TODO el contexto de tu chat</p>
-            </div>
-          </div>
-          {/* 🔢 CONTADOR DE PREGUNTAS - PROMINENTE */}
-          <div className={`flex flex-col items-end gap-1 px-4 py-2 rounded-xl transition-all ${
-            credits === 1
-              ? 'bg-amber-500/20 border border-amber-500/40'
-              : credits <= 0
-                ? 'bg-rose-500/20 border border-rose-500/40'
-                : 'bg-emerald-500/20 border border-emerald-500/40'
-          }`}>
-            {/* Texto del contador */}
-            <div className="flex items-center gap-2">
-              <span className={`text-sm font-bold ${
-                credits === 1 ? 'text-amber-200' : credits <= 0 ? 'text-rose-200' : 'text-emerald-200'
-              }`}>
-                {3 - credits} de 3 usadas
-              </span>
-            </div>
-            {/* Dots visuales */}
-            <div className="flex gap-1.5">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className={`w-3 h-3 rounded-full transition-all ${
-                    i <= (3 - credits)
-                      ? 'bg-slate-500' // Usadas = gris
-                      : credits === 1 && i === 3
-                        ? 'bg-amber-400 animate-pulse shadow-lg shadow-amber-500/50' // Última = pulso amber
-                        : 'bg-gradient-to-br from-emerald-400 to-cyan-400 shadow-md shadow-emerald-500/30' // Disponibles = verde
-                  }`}
-                />
-              ))}
-            </div>
-            {/* Warning última pregunta */}
-            {credits === 1 && (
-              <p className="text-[10px] font-bold text-amber-300 animate-pulse">
-                ⚠️ ¡Última pregunta!
-              </p>
-            )}
-            {/* Sin preguntas */}
-            {credits <= 0 && (
-              <p className="text-[10px] font-bold text-rose-300">
-                Sin preguntas disponibles
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Ejemplos de preguntas si no hay historial */}
-        {chatHistory.length === 0 && (
-          <div className="mb-6 p-4 rounded-xl bg-purple-950/40 border border-purple-500/30">
-            <p className="text-sm font-semibold text-purple-300 mb-3 flex items-center gap-2">
-              <span>💡</span> Ideas de preguntas que puedes hacer:
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {[
-                "¿Quién está más enganchado?",
-                "¿Qué debería cambiar yo?",
-                "¿Esta relación tiene futuro?",
-                "¿Qué patrones se repiten?",
-              ].map((q, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setQuestion(q)}
-                  className="text-left flex items-start gap-2 text-sm text-slate-200 bg-slate-900/60 hover:bg-slate-800/80 rounded-lg px-3 py-2.5 border border-purple-500/20 hover:border-purple-500/40 transition-all"
-                >
-                  <span className="text-purple-400 font-bold">→</span>
-                  <span>{q}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Historial de preguntas y respuestas - CON SCROLL INTERNO */}
-        {chatHistory.length > 0 && (
-          <div className="mb-6 relative">
-            {/* Indicador de mensajes anteriores arriba */}
-            {showScrollHint && (
-              <div className="absolute top-0 left-0 right-0 z-20 pointer-events-none">
-                <div className="h-12 bg-gradient-to-b from-slate-900 via-slate-900/80 to-transparent flex items-start justify-center pt-1">
-                  <button
-                    onClick={() => chatContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-                    className="pointer-events-auto flex items-center gap-1 px-3 py-1 rounded-full bg-purple-500/30 border border-purple-500/50 text-xs text-purple-200 hover:bg-purple-500/40 transition-all"
-                  >
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                    </svg>
-                    Ver mensajes anteriores
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <div className="relative">
-              {/* Indicador de scroll inferior - gradiente fade */}
-              <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-slate-900 via-slate-900/80 to-transparent z-10 flex items-end justify-center pb-1 lg:hidden">
-                <div className="flex items-center gap-1 text-[10px] text-purple-300/70 animate-bounce">
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                  <span>Desliza para ver más</span>
-                </div>
-              </div>
-            <div
-              ref={chatContainerRef}
-              className="space-y-4 max-h-[400px] overflow-y-auto pr-2 scroll-smooth pb-8"
-              style={{ scrollBehavior: 'smooth' }}
-            >
-              <p className="text-sm font-semibold text-purple-300 flex items-center gap-2 sticky top-0 bg-slate-900/95 py-2 -mt-2 -mx-2 px-2 z-10">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
-                Tu conversación con la IA:
-              </p>
-            {chatHistory.map((msg, idx) => (
-              <div
-                key={idx}
-                className="space-y-3"
-                ref={idx === chatHistory.length - 1 ? lastMessageRef : null}
-              >
-                {/* Pregunta del usuario - con animación de entrada */}
-                <div className="flex justify-end animate-fade-in">
-                  <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-gradient-to-r from-emerald-500 to-cyan-500 px-4 py-3 shadow-lg">
-                    <p className="text-sm font-medium text-slate-950">{msg.question}</p>
-                  </div>
-                </div>
-                {/* Respuesta de la IA - CON ANIMACIÓN PREMIUM */}
-                <div className="flex justify-start">
-                  <div className="max-w-[95%] rounded-2xl rounded-tl-sm bg-gradient-to-br from-purple-950/60 to-slate-900/80 border-2 border-purple-500/30 px-4 py-3 shadow-lg">
-                    {/* Si es la última respuesta y está animando */}
-                    {idx === chatHistory.length - 1 && isAnimating ? (
-                      <>
-                        {/* Mientras piensa, mostramos mensaje mínimo (la card de IA Experta ya está abajo) */}
-                        {animationStep === 'thinking' && (
-                          <p className="text-sm text-purple-300 italic animate-pulse">Procesando...</p>
-                        )}
-                        {/* Revelando palabra por palabra */}
-                        {animationStep === 'revealing' && (
-                          <p className="text-sm text-slate-100 whitespace-pre-wrap leading-relaxed">
-                            {displayedAnswer}
-                            <span className="inline-block w-0.5 h-4 bg-purple-400 ml-0.5 animate-pulse"></span>
-                          </p>
-                        )}
-                      </>
-                    ) : (
-                      /* Respuesta normal (ya completada) */
-                      <p className="text-sm text-slate-100 whitespace-pre-wrap leading-relaxed">{msg.answer}</p>
-                    )}
-                  </div>
-                </div>
-                {/* CTA inline después de la última respuesta si no hay créditos (solo cuando termina la animación) */}
-                {idx === chatHistory.length - 1 && credits <= 0 && !isAnimating && (
-                  <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-fuchsia-500/20 border border-purple-500/40">
-                    <div className="flex flex-col sm:flex-row items-center gap-3">
-                      <div className="flex-1 text-center sm:text-left">
-                        <p className="text-sm font-bold text-white">¿Quieres seguir preguntando?</p>
-                        <p className="text-xs text-purple-200">+3 preguntas por MX$49</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={onUnlockClick}
-                        className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-fuchsia-500 px-4 py-2 text-sm font-bold text-white shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                        Desbloquear
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {/* 🎬 Indicador de carga PRO mientras la API procesa */}
-            {loading && (
-              <div className="flex justify-start animate-fade-in">
-                <div className="w-full max-w-md rounded-2xl bg-gradient-to-br from-purple-950/80 via-slate-900 to-slate-950 border-2 border-purple-500/40 p-5 shadow-2xl shadow-purple-500/20">
-                  {/* Header con ícono animado */}
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-purple-500/40">
-                      <svg className="w-5 h-5 text-white animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-white">IA Experta Analizando</p>
-                      <p className="text-xs text-purple-300">{CHAT_STEPS[chatProgressStep]?.label || 'Procesando...'}</p>
-                    </div>
-                  </div>
-
-                  {/* Barra de progreso animada */}
-                  <div className="mb-4">
-                    <div
-                      style={{
-                        width: '100%',
-                        height: '8px',
-                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                        borderRadius: '9999px',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      <div
-                        style={{
-                          height: '100%',
-                          width: `${chatProgress}%`,
-                          background: 'linear-gradient(90deg, #a855f7, #d946ef, #22d3ee)',
-                          borderRadius: '9999px',
-                          transition: 'width 0.15s ease-out',
-                        }}
-                      />
-                    </div>
-                    <div className="mt-1 flex justify-between text-xs">
-                      <span className="text-purple-300 font-medium">{Math.round(chatProgress)}%</span>
-                      <span className="text-slate-500">~5-10 seg</span>
-                    </div>
-                  </div>
-
-                  {/* Mini pasos */}
-                  <div className="space-y-1.5">
-                    {CHAT_STEPS.map((step, idx) => {
-                      const isCompleted = chatProgressStep > idx;
-                      const isActive = chatProgressStep === idx;
-                      return (
-                        <div
-                          key={idx}
-                          className={`flex items-center gap-2 text-xs transition-all ${
-                            isActive ? 'text-white' : isCompleted ? 'text-emerald-400' : 'text-slate-600'
-                          }`}
-                        >
-                          {isCompleted ? (
-                            <svg className="w-3.5 h-3.5 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                          ) : isActive ? (
-                            <div className="w-3.5 h-3.5 rounded-full border-2 border-purple-400 border-t-transparent animate-spin" />
-                          ) : (
-                            <div className="w-3.5 h-3.5 rounded-full border border-slate-700" />
-                          )}
-                          <span>{step.label}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
-            </div>
-            </div>
-          </div>
-        )}
-
-        {/* Input área - Solo si tiene créditos */}
-        {credits > 0 ? (
-          <>
-            <div className="mb-4">
-              <textarea
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleAsk();
-                  }
-                }}
-                rows={2}
-                className="w-full rounded-xl border-2 border-purple-500/30 bg-slate-900/80 px-4 py-3 text-base text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all resize-none"
-                placeholder="Escribe tu pregunta sobre tu relación aquí..."
-              />
-            </div>
-
-            {/* Botón de enviar prominente */}
-            <div className="flex items-center gap-4">
-              <button
-                type="button"
-                onClick={handleAsk}
-                disabled={loading || isAnimating || !question.trim()}
-                className="flex-1 inline-flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-500 px-6 py-4 text-lg font-bold text-white shadow-xl shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:cursor-not-allowed disabled:opacity-60 relative overflow-hidden group"
-              >
-                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                {loading ? (
-                  <>
-                    <svg className="w-5 h-5 animate-spin relative z-10" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span className="relative z-10">La IA está analizando...</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    <span className="relative z-10">Preguntar a la IA</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </>
-        ) : (
-          /* Mensaje cuando no hay créditos - UPSELL PROMINENTE */
-          <div className="p-5 rounded-xl bg-gradient-to-br from-purple-950/60 to-fuchsia-950/40 border-2 border-purple-500/40 shadow-xl shadow-purple-500/10">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-fuchsia-500 shadow-lg shadow-purple-500/40 mb-4">
-                <span className="text-2xl">🔒</span>
-              </div>
-              <h4 className="text-lg font-bold text-white mb-2">
-                {chatHistory.length > 0 ? '¿Quieres seguir preguntando?' : 'Desbloquea preguntas a la IA'}
-              </h4>
-              <p className="text-sm text-purple-200 mb-4">
-                {chatHistory.length > 0
-                  ? 'Usaste tus 3 preguntas incluidas. ¡Obtén más para seguir explorando!'
-                  : 'Obtén 3 preguntas para explorar tu relación con la IA'
-                }
-              </p>
-              <button
-                type="button"
-                onClick={onUnlockClick}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-500 px-6 py-4 text-base font-bold text-white shadow-xl shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                Obtener +3 preguntas — $49 MXN
-              </button>
-              <p className="text-xs text-slate-500 mt-3">Pago único · Sin suscripción</p>
-            </div>
-          </div>
-        )}
-        {error && <p className="mt-3 text-sm text-rose-300 text-center">{error}</p>}
-      </div>
-    </div>
-  );
-}
+// ChatBox component temporarily disabled during auth refactoring
+// TODO: Integrate ChatBox with new auth system
