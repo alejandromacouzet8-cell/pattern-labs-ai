@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '../lib/supabase/client';
 
 interface ProtectedPageProps {
   children: React.ReactNode;
