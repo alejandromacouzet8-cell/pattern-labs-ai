@@ -8,6 +8,12 @@ const nextConfig: NextConfig = {
     "localhost",
   ],
   
+  // Forzar workspace root al directorio del proyecto
+  // Esto evita que Next.js use lockfiles huérfanos en niveles superiores
+  turbopack: {
+    root: __dirname,
+  },
+  
   // Excluir dependencias nativas de Remotion del bundle del servidor
   // para evitar errores de build en Vercel
   serverExternalPackages: [
