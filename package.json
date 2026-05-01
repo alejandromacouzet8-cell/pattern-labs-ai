@@ -6,26 +6,50 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "generate-video": "ts-node scripts/generate-video.ts",
+    "remotion:studio": "remotion studio remotion/index.tsx",
+    "remotion:render": "remotion render remotion/index.tsx ViralPromo out/viral-promo.mp4",
+    "remotion:render-square": "remotion render remotion/index.tsx ViralPromoSquare out/viral-promo-square.mp4",
+    "remotion:render-comparison": "remotion render remotion/index.tsx ViralComparison out/viral-comparison.mp4",
+    "remotion:render-comparison-square": "remotion render remotion/index.tsx ViralComparisonSquare out/viral-comparison-square.mp4",
+    "remotion:render-emotional": "remotion render remotion/index.tsx ViralEmotional out/viral-emotional.mp4",
+    "remotion:render-emotional-square": "remotion render remotion/index.tsx ViralEmotionalSquare out/viral-emotional-square.mp4",
+    "remotion:render-manipulator": "remotion render remotion/index.tsx ViralManipulator out/viral-manipulator.mp4",
+    "remotion:render-manipulator-square": "remotion render remotion/index.tsx ViralManipulatorSquare out/viral-manipulator-square.mp4",
+    "remotion:render-1min": "remotion render remotion/index.tsx Viral1Min out/viral-1min.mp4",
+    "remotion:render-1min-square": "remotion render remotion/index.tsx Viral1MinSquare out/viral-1min-square.mp4"
   },
   "dependencies": {
+    "@remotion/bundler": "^4.0.100",
+    "@remotion/cli": "^4.0.100",
+    "@remotion/google-fonts": "^4.0.100",
+    "@remotion/media-utils": "^4.0.100",
+    "@remotion/player": "^4.0.100",
+    "@remotion/renderer": "^4.0.100",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.43.0",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
     "@vercel/analytics": "^1.5.0",
+    "dotenv": "^16.4.5",
+    "ffprobe-static": "^3.1.0",
     "jszip": "^3.10.1",
     "next": "16.1.6",
     "openai": "^6.10.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-markdown": "^10.1.0",
-    "stripe": "^20.0.0"
+    "remotion": "^4.0.100",
+    "stripe": "^20.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
-    "tailwindcss": "^4",
-    "typescript": "^5.9.3"
+    "tailwindcss": "^4"
   }
 }
