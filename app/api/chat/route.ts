@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import OpenAI from "openai";
+import { createServerClient } from "../../../lib/supabase/server";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
@@ -167,8 +168,57 @@ function calculateChatStats(chatText: string): {
   };
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    // ✅ VERIFICAR AUTENTICACIÓN
+    const supabase = await createServerClient();
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError || !session) {
+      return NextResponse.json({ error: 'Unauthorized - Please login' }, { status: 401 });
+    }
+
+    const userId = session.user.id;
+
+    // ✅ VERIFICAR Y DEDUCIR CRÉDITOS
+    const { data: creditData, error: creditFetchError } = await supabase
+      .from('credits')
+      .select('balance')
+      .eq('user_id', userId)
+      .single();
+
+    if (creditFetchError || !creditData) {
+      return NextResponse.json({ error: 'Could not fetch credits' }, { status: 500 });
+    }
+
+    if (creditData.balance < 1) {
+      return NextResponse.json(
+        { error: 'Insufficient credits - You need 1 credit to ask a question' },
+        { status: 402 }
+      );
+    }
+
+    // Deducir 1 crédito por pregunta
+    const { error: deductError } = await supabase
+      .from('credits')
+      .update({ balance: creditData.balance - 1 })
+      .eq('user_id', userId);
+
+    if (deductError) {
+      return NextResponse.json({ error: 'Could not deduct credits' }, { status: 500 });
+    }
+
+    // Registrar transacción
+    await supabase
+      .from('transactions')
+      .insert({
+        user_id: userId,
+        type: 'usage',
+        amount: -1,
+        description: 'Pregunta a la IA (1 crédito)',
+      });
+
+    // ✅ CONTINUAR CON LÓGICA ORIGINAL DEL CHAT
     const { analysis, fullChat, question, chatStats: preCalculatedStats } = (await req.json()) as ChatBody;
 
     if (!fullChat || !question) {

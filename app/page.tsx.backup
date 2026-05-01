@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import JSZip from 'jszip';
 
 /** Flag solo para desarrollo (Next reemplaza esto en build) */
@@ -88,9 +88,6 @@ export default function Home() {
   const [result, setResult] = useState<AnalyzeResult | null>(null);
   const [openSectionId, setOpenSectionId] = useState<string | null>('resumen');
 
-  const [isPaying, setIsPaying] = useState(false);
-  const [hasAccess, setHasAccess] = useState(false);
-
   // 🔐 Estado de autenticación
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -101,12 +98,6 @@ export default function Home() {
 
   // 🎯 Controlar flujo del file input (aparece después del CTA)
   const [showFileInput, setShowFileInput] = useState(false);
-
-  // 🎁 Estado para pregunta demo gratis (con respuesta blurreada)
-  const [demoQuestion, setDemoQuestion] = useState('');
-  const [demoAsked, setDemoAsked] = useState(false);
-  const [demoLoading, setDemoLoading] = useState(false);
-  const [savedDemoQuestion, setSavedDemoQuestion] = useState('');
 
   // 📦 Estado para el modal de subida
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -129,16 +120,35 @@ export default function Home() {
   // 📱 Estado para sticky CTA móvil (aparece al hacer scroll)
   const [showStickyCTA, setShowStickyCTA] = useState(false);
 
+  // 🎯 Estado para sidebar y navegación
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [currentView, setCurrentView] = useState<'home' | 'analyses' | 'privacy'>('home');
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const modalFileInputRef = useRef<HTMLInputElement | null>(null);
   const hasFile = !!selectedFile;
 
-  // 🔐 Verificar sesión de Supabase al montar
+  // 🔐 Verificar sesión de Supabase al montar y cargar créditos
   useEffect(() => {
     const checkSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         setUser(session?.user || null);
+
+        // Si hay usuario, cargar sus créditos desde Supabase
+        if (session?.user) {
+          try {
+            const res = await fetch('/api/credits/get');
+            if (res.ok) {
+              const data = await res.json();
+              setCredits(data.credits || 0);
+              console.log('💳 Créditos cargados:', data.credits);
+            }
+          } catch (err) {
+            console.error('Error cargando créditos:', err);
+          }
+        }
+
         setIsLoading(false);
       } catch (error) {
         console.error('Error checking session:', error);
@@ -149,27 +159,11 @@ export default function Home() {
     checkSession();
   }, []);
 
-  // 🧠 Rehidratar acceso/credits/resultado desde localStorage
+  // 🧠 Rehidratar resultado desde localStorage
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      // Restaurar acceso y créditos
-      const stored = window.localStorage.getItem('patternlabs_access');
-      if (stored) {
-        const parsed = JSON.parse(stored) as {
-          hasAccess?: boolean;
-          credits?: number;
-        };
-
-        if (parsed.hasAccess && typeof parsed.credits === 'number' && parsed.credits >= 0) {
-          setHasAccess(true);
-          setCredits(parsed.credits);
-        } else {
-          window.localStorage.removeItem('patternlabs_access');
-        }
-      }
-
-      // Restaurar resultado del análisis (para continuar después de pagar más preguntas)
+      // Restaurar resultado del análisis
       const storedResult = window.localStorage.getItem('patternlabs_result');
       if (storedResult) {
         const parsedResult = JSON.parse(storedResult) as AnalyzeResult;
@@ -178,21 +172,9 @@ export default function Home() {
       }
     } catch (err) {
       console.error('Error leyendo localStorage', err);
-      window.localStorage.removeItem('patternlabs_access');
       window.localStorage.removeItem('patternlabs_result');
     }
   }, []);
-
-  // Guardar cambios en localStorage (acceso y créditos)
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const payload = JSON.stringify({ hasAccess, credits });
-      window.localStorage.setItem('patternlabs_access', payload);
-    } catch (err) {
-      console.error('Error guardando localStorage', err);
-    }
-  }, [hasAccess, credits]);
 
   // Guardar resultado del análisis en localStorage (para persistir entre pagos)
   useEffect(() => {
@@ -486,6 +468,13 @@ export default function Home() {
   const handleConfirmUpload = async () => {
     if (!fileToUpload) return;
 
+    // ✅ Verificar que el usuario esté logueado
+    if (!user) {
+      setUploadError('Debes iniciar sesión para analizar tu chat');
+      router.push('/auth');
+      return;
+    }
+
     setShowProgressBar(true);
     setIsUploading(true);
     setProgressPercent(0);
@@ -521,7 +510,6 @@ export default function Home() {
     try {
       const formData = new FormData();
       formData.append('file', fileToUpload);
-      formData.append('mode', hasAccess ? 'full' : 'free');
 
       const res = await fetch('/api/analyze', {
         method: 'POST',
@@ -538,7 +526,7 @@ export default function Home() {
       setSelectedFile(fileToUpload);
       setResult(data as AnalyzeResult);
       setOpenSectionId('resumen');
-      setStatus(hasAccess ? 'Reporte completo generado. 🎯' : 'Reporte demo generado. 🎯');
+      setStatus('Reporte completo generado. 🎯');
       progressController.complete(data as AnalyzeResult);
     } catch (error) {
       console.error(error);
@@ -572,44 +560,11 @@ export default function Home() {
     setOpenSectionId((current) => (current === id ? null : id));
   };
 
-  const handleCheckoutSingle = async () => {
-    try {
-      setIsPaying(true);
-      setStatus('Creando sesión de pago segura…');
-
-      const res = await fetch('/api/stripe/checkout/single', {
-        method: 'POST',
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.url) {
-        console.error('Stripe error:', data);
-        setStatus(
-          data.error || 'No se pudo iniciar el pago. Intenta de nuevo.'
-        );
-        return;
-      }
-
-      // Redirigir a Stripe Checkout
-      window.location.href = data.url;
-    } catch (error) {
-      console.error(error);
-      setStatus('Error de red al conectar con Stripe.');
-    } finally {
-      setIsPaying(false);
-    }
-  };
-
   /** 🔧 Resetear estado para nuevo análisis */
   const handleResetAccess = () => {
     console.log('🔄 Reseteando para nuevo análisis...');
-    // NO resetear hasAccess ni credits si ya pagó - solo el resultado
     setResult(null);
     setSelectedFile(null);
-    setDemoAsked(false);
-    setDemoQuestion('');
-    setSavedDemoQuestion('');
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem('patternlabs_result');
       window.localStorage.removeItem('patternlabs_chat_history');
@@ -642,48 +597,233 @@ export default function Home() {
   };
 
   /** 🔧 Botón dev para simular pago exitoso */
-  const handleSimulatePurchase = () => {
-    setHasAccess(true);
-    setCredits(3);
-    setStatus('✅ [DEV] Pago simulado. Tienes 3 preguntas con la IA.');
-  };
-
   const consumeCredit = () => {
     setCredits((prev) => Math.max(prev - 1, 0));
   };
 
-  // 🔒 Manejar click en patrón bloqueado - abre mini-modal contextual
-  const handleLockedPatternClick = (patternName: string) => {
-    setLockedPatternName(patternName);
-    setShowLockedModal(true);
-  };
-
-  // 🎁 Manejar pregunta demo gratis (fake processing + blur)
-  const handleDemoAsk = async () => {
-    if (!demoQuestion.trim()) return;
-
-    const askedQuestion = demoQuestion.trim();
-    setSavedDemoQuestion(askedQuestion);
-    setDemoQuestion('');
-    setDemoLoading(true);
-
-    // Simular procesamiento (fake loading 2.5 segundos)
-    await new Promise(resolve => setTimeout(resolve, 2500));
-
-    setDemoLoading(false);
-    setDemoAsked(true);
-
-    // Scroll al CTA después de mostrar la respuesta blurreada
-    setTimeout(() => {
-      const el = document.getElementById('unlock-cta');
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
-  };
-
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
+      {/* SIDEBAR (solo cuando hay usuario logueado) */}
+      {user && (
+        <>
+          {/* Overlay para móvil */}
+          {sidebarOpen && (
+            <div
+              className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
+          )}
+
+          {/* Sidebar */}
+          <aside
+            className={`fixed top-0 left-0 h-full w-72 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border-r border-white/10 z-50 transform transition-all duration-300 ease-in-out ${
+              sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+            }`}
+          >
+            <div className="flex flex-col h-full">
+              {/* Logo */}
+              <div className="p-6 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center shadow-lg shadow-purple-500/50">
+                    <span className="text-xl">💬</span>
+                  </div>
+                  <div>
+                    <h1 className="text-xl font-black text-white tracking-tight">Pattern Labs</h1>
+                    <p className="text-xs text-slate-400 font-medium">AI Analysis</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Créditos - CARD PRO */}
+              <div className="mx-6 mb-6">
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 via-purple-500 to-blue-600 p-5 shadow-2xl shadow-purple-500/40">
+                  {/* Shine effect */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
+
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-semibold text-purple-100 uppercase tracking-wider">Créditos</span>
+                      <span className="text-xs text-purple-200/80 bg-white/10 px-2 py-1 rounded-full">Activos</span>
+                    </div>
+
+                    <div className="flex items-baseline gap-2 mb-2">
+                      <span className="text-5xl font-black text-white tracking-tight">{credits}</span>
+                      <span className="text-lg text-purple-100/80 font-medium">disponibles</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs text-purple-100/70">
+                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                      <span>1 crédito = 1 pregunta a la IA</span>
+                    </div>
+
+                    {credits === 0 && (
+                      <button className="mt-4 w-full py-2.5 px-4 bg-white text-purple-600 rounded-xl font-bold text-sm hover:bg-purple-50 transition-colors shadow-lg">
+                        + Comprar más créditos
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Navegación */}
+              <nav className="px-4 space-y-1.5">
+                <button
+                  onClick={() => {
+                    setCurrentView('home');
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-200 relative overflow-hidden group ${
+                    currentView === 'home'
+                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/50'
+                      : 'text-slate-300 hover:bg-slate-800/60'
+                  }`}
+                >
+                  {currentView === 'home' && (
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-white rounded-r"></div>
+                  )}
+                  {currentView !== 'home' && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 -translate-x-full group-hover:translate-x-full" style={{ transition: 'transform 0.6s ease-in-out, opacity 0.3s' }}></div>
+                  )}
+                  <svg className={`w-5 h-5 transition-transform duration-200 ${
+                    currentView === 'home' ? 'scale-110' : 'group-hover:scale-105'
+                  }`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span className="group-hover:translate-x-0.5 transition-transform duration-200">Nuevo Análisis</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setCurrentView('analyses');
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-200 relative overflow-hidden group ${
+                    currentView === 'analyses'
+                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/50'
+                      : 'text-slate-300 hover:bg-slate-800/60'
+                  }`}
+                >
+                  {currentView === 'analyses' && (
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-white rounded-r"></div>
+                  )}
+                  {currentView !== 'analyses' && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 -translate-x-full group-hover:translate-x-full" style={{ transition: 'transform 0.6s ease-in-out, opacity 0.3s' }}></div>
+                  )}
+                  <svg className={`w-5 h-5 transition-transform duration-200 ${
+                    currentView === 'analyses' ? 'scale-110' : 'group-hover:scale-105'
+                  }`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  <span className="group-hover:translate-x-0.5 transition-transform duration-200">Mis Análisis</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setCurrentView('privacy');
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-200 relative overflow-hidden group ${
+                    currentView === 'privacy'
+                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/50'
+                      : 'text-slate-300 hover:bg-slate-800/60'
+                  }`}
+                >
+                  {currentView === 'privacy' && (
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-white rounded-r"></div>
+                  )}
+                  {currentView !== 'privacy' && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 -translate-x-full group-hover:translate-x-full" style={{ transition: 'transform 0.6s ease-in-out, opacity 0.3s' }}></div>
+                  )}
+                  <svg className={`w-5 h-5 transition-transform duration-200 ${
+                    currentView === 'privacy' ? 'scale-110' : 'group-hover:scale-105'
+                  }`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  <span className="group-hover:translate-x-0.5 transition-transform duration-200">Privacidad</span>
+                </button>
+              </nav>
+
+              {/* User Info + Logout */}
+              <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-white/10">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-sm font-bold">
+                    {user.email?.[0].toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">{user.email}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    setUser(null);
+                    setHasAccess(false);
+                    setCredits(0);
+                    setCurrentView('home');
+                  }}
+                  className="w-full px-4 py-2 text-sm font-medium text-slate-300 hover:text-white border border-slate-700 rounded-lg hover:bg-slate-800 transition-all duration-200"
+                >
+                  Cerrar Sesión
+                </button>
+              </div>
+            </div>
+          </aside>
+        </>
+      )}
+
+      {/* HEADER CON LOGIN/SIGNUP (solo cuando NO hay usuario) */}
+      {!user && !result && (
+        <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-900/80 backdrop-blur-md">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
+            {/* Logo */}
+            <div className="flex items-center gap-2">
+              <span className="text-xl">💬</span>
+              <h1 className="text-lg font-bold text-white">Pattern Labs AI</h1>
+            </div>
+
+            {/* Auth Buttons */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => router.push('/auth')}
+                className="px-4 py-1.5 text-sm font-medium text-slate-300 hover:text-white transition-colors"
+              >
+                Iniciar Sesión
+              </button>
+              <button
+                onClick={() => router.push('/auth')}
+                className="px-4 py-1.5 text-sm font-semibold text-white bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg hover:opacity-90 transition-opacity"
+              >
+                Registrarse Gratis
+              </button>
+            </div>
+          </div>
+        </header>
+      )}
+
+      {/* HEADER CUANDO HAY USUARIO (solo botón de menú en móvil) */}
+      {user && !result && (
+        <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-900/80 backdrop-blur-md lg:ml-64">
+          <div className="flex items-center justify-between px-6 py-3">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="lg:hidden p-2 rounded-lg hover:bg-slate-800 transition-colors"
+            >
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-400">💳</span>
+              <span className="text-sm font-semibold text-white">{credits} créditos</span>
+            </div>
+          </div>
+        </header>
+      )}
+
       {/* HERO */}
-      <div className="relative overflow-hidden">
+      <div className={`relative overflow-hidden ${user ? 'lg:ml-64' : ''}`}>
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_#4c1d95_0,_#020617_55%)] opacity-80" />
 
         <div className="relative mx-auto flex max-w-6xl flex-col gap-16 px-6 pb-16 pt-10 lg:flex-row lg:items-center lg:pt-16">
@@ -1277,10 +1417,8 @@ export default function Home() {
                   <svg className="w-4 h-4 text-purple-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                   </svg>
-                  <span className="text-sm font-bold text-purple-200">
-                    {result.truncated ? '80,000' : result.length.toLocaleString()}
-                  </span>
-                  <span className="text-xs text-purple-300">caracteres analizados (demo)</span>
+                  <span className="text-sm font-bold text-purple-200">{result.length.toLocaleString()}</span>
+                  <span className="text-xs text-purple-300">caracteres analizados</span>
                 </div>
               </div>
 
@@ -1407,7 +1545,7 @@ export default function Home() {
                     className="mt-1.5 text-[11px] font-bold text-purple-300 hover:text-purple-200 flex items-center gap-1 transition-colors"
                   >
                     <span>🚀</span>
-                    <span>Desbloquea Pro para analizar los millones de caracteres de tu chat completo →</span>
+                    <span>Desbloquea Pro para analizar millones de caracteres →</span>
                   </button>
                 </div>
               )}
@@ -1892,7 +2030,7 @@ export default function Home() {
                                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
                                     </svg>
-                                    {isPaying ? 'Procesando...' : 'Ver mi análisis — $149'}
+                                    {isPaying ? 'Procesando...' : 'Ver mi análisis — $49'}
                                   </span>
                                   <span className="relative z-10 text-sm font-medium text-slate-700/80 line-through">$99 MXN</span>
                                 </button>
@@ -2078,7 +2216,7 @@ export default function Home() {
             ) : (
               <div className="text-center rounded-2xl bg-gradient-to-r from-purple-950/60 to-fuchsia-950/60 border border-purple-500/40 p-8">
                 <p className="text-2xl md:text-3xl font-bold text-white mb-3">
-                  Todo esto por <span className="text-purple-300">MX$149</span>
+                  Todo esto por <span className="text-purple-300">MX$49</span>
                 </p>
                 <p className="text-slate-300 mb-5 max-w-md mx-auto">
                   Reporte completo + <strong className="text-white">3 preguntas a la IA</strong> que conoce TODO tu chat
@@ -2326,7 +2464,7 @@ export default function Home() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-purple-400">✓</span>
-                    <span><strong className="text-white">3 preguntas incluidas</strong> por MX$149</span>
+                    <span><strong className="text-white">3 preguntas incluidas</strong> por MX$49</span>
                   </li>
                 </ul>
               </div>
@@ -2483,7 +2621,7 @@ export default function Home() {
                     ¿Ves el poder? Imagina tener esto con TU chat.
                   </p>
                   <p className="text-slate-300 mb-6 text-lg">
-                    Por solo <span className="text-2xl font-bold text-purple-300">MX$149</span> obtienes el análisis completo + 3 preguntas a la IA
+                    Por solo <span className="text-2xl font-bold text-purple-300">MX$49</span> obtienes el análisis completo + 3 preguntas a la IA
                   </p>
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                     <button
@@ -2508,7 +2646,7 @@ export default function Home() {
                       <span>{isPaying ? 'Redirigiendo...' : 'Desbloquear análisis pro'}</span>
                     </button>
                   </div>
-                  <p className="text-xs text-slate-500 mt-4">Pago único MX$149 • Sin suscripciones</p>
+                  <p className="text-xs text-slate-500 mt-4">Pago único MX$49 • Sin suscripciones</p>
                 </>
               )}
             </div>
@@ -2620,7 +2758,7 @@ export default function Home() {
                     ANÁLISIS PRO
                   </span>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-black text-white">$149</span>
+                    <span className="text-4xl font-black text-white">$49</span>
                     <span className="text-slate-500">MXN</span>
                   </div>
                   <p className="text-sm text-emerald-300/80 mt-2">Pago único · Sin suscripciones</p>
@@ -3274,7 +3412,7 @@ export default function Home() {
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
-                  {isPaying ? '...' : '$149'}
+                  {isPaying ? '...' : '$49'}
                 </span>
                 <span className="text-[9px] text-slate-600 line-through">$99</span>
               </button>
@@ -3732,7 +3870,7 @@ export default function Home() {
               {/* Anchor pricing */}
               <div className="text-center mb-4">
                 <p className="text-sm text-white/60">
-                  Total valor: <span className="line-through">$299 MXN</span> → Tú pagas: <span className="text-emerald-400 font-bold">$149 MXN</span>
+                  Total valor: <span className="line-through">$100 MXN</span> → Tú pagas: <span className="text-emerald-400 font-bold">$49 MXN</span>
                 </p>
               </div>
 
@@ -3748,7 +3886,7 @@ export default function Home() {
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                {isPaying ? 'Procesando...' : 'Desbloquear todo — $149 MXN'}
+                {isPaying ? 'Procesando...' : 'Desbloquear todo — $49 MXN'}
               </button>
 
               {/* Trust badges */}

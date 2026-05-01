@@ -6,7 +6,7 @@ export default function ReportPage() {
           Demo de reporte de chat 💬
         </h1>
         <p className="text-slate-400">
-          Aquí luego vamos a mostrar el análisis completo del chat:
+          Aquí luego vamos a emostrar el análisis completo del chat:
           balance emocional, patrones, insights y recomendaciones.
         </p>
       </div>

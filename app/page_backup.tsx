@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import JSZip from 'jszip';
 
 /** Flag solo para desarrollo (Next reemplaza esto en build) */
@@ -1277,10 +1277,8 @@ export default function Home() {
                   <svg className="w-4 h-4 text-purple-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                   </svg>
-                  <span className="text-sm font-bold text-purple-200">
-                    {result.truncated ? '80,000' : result.length.toLocaleString()}
-                  </span>
-                  <span className="text-xs text-purple-300">caracteres analizados (demo)</span>
+                  <span className="text-sm font-bold text-purple-200">{result.length.toLocaleString()}</span>
+                  <span className="text-xs text-purple-300">caracteres analizados</span>
                 </div>
               </div>
 
@@ -1407,7 +1405,7 @@ export default function Home() {
                     className="mt-1.5 text-[11px] font-bold text-purple-300 hover:text-purple-200 flex items-center gap-1 transition-colors"
                   >
                     <span>🚀</span>
-                    <span>Desbloquea Pro para analizar los millones de caracteres de tu chat completo →</span>
+                    <span>Desbloquea Pro para analizar millones de caracteres →</span>
                   </button>
                 </div>
               )}
@@ -1892,7 +1890,7 @@ export default function Home() {
                                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
                                     </svg>
-                                    {isPaying ? 'Procesando...' : 'Ver mi análisis — $149'}
+                                    {isPaying ? 'Procesando...' : 'Ver mi análisis — $49'}
                                   </span>
                                   <span className="relative z-10 text-sm font-medium text-slate-700/80 line-through">$99 MXN</span>
                                 </button>
@@ -2078,7 +2076,7 @@ export default function Home() {
             ) : (
               <div className="text-center rounded-2xl bg-gradient-to-r from-purple-950/60 to-fuchsia-950/60 border border-purple-500/40 p-8">
                 <p className="text-2xl md:text-3xl font-bold text-white mb-3">
-                  Todo esto por <span className="text-purple-300">MX$149</span>
+                  Todo esto por <span className="text-purple-300">MX$49</span>
                 </p>
                 <p className="text-slate-300 mb-5 max-w-md mx-auto">
                   Reporte completo + <strong className="text-white">3 preguntas a la IA</strong> que conoce TODO tu chat
@@ -2326,7 +2324,7 @@ export default function Home() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-purple-400">✓</span>
-                    <span><strong className="text-white">3 preguntas incluidas</strong> por MX$149</span>
+                    <span><strong className="text-white">3 preguntas incluidas</strong> por MX$49</span>
                   </li>
                 </ul>
               </div>
@@ -2483,7 +2481,7 @@ export default function Home() {
                     ¿Ves el poder? Imagina tener esto con TU chat.
                   </p>
                   <p className="text-slate-300 mb-6 text-lg">
-                    Por solo <span className="text-2xl font-bold text-purple-300">MX$149</span> obtienes el análisis completo + 3 preguntas a la IA
+                    Por solo <span className="text-2xl font-bold text-purple-300">MX$49</span> obtienes el análisis completo + 3 preguntas a la IA
                   </p>
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                     <button
@@ -2508,7 +2506,7 @@ export default function Home() {
                       <span>{isPaying ? 'Redirigiendo...' : 'Desbloquear análisis pro'}</span>
                     </button>
                   </div>
-                  <p className="text-xs text-slate-500 mt-4">Pago único MX$149 • Sin suscripciones</p>
+                  <p className="text-xs text-slate-500 mt-4">Pago único MX$49 • Sin suscripciones</p>
                 </>
               )}
             </div>
@@ -2620,7 +2618,7 @@ export default function Home() {
                     ANÁLISIS PRO
                   </span>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-black text-white">$149</span>
+                    <span className="text-4xl font-black text-white">$49</span>
                     <span className="text-slate-500">MXN</span>
                   </div>
                   <p className="text-sm text-emerald-300/80 mt-2">Pago único · Sin suscripciones</p>
@@ -3274,7 +3272,7 @@ export default function Home() {
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
-                  {isPaying ? '...' : '$149'}
+                  {isPaying ? '...' : '$49'}
                 </span>
                 <span className="text-[9px] text-slate-600 line-through">$99</span>
               </button>
@@ -3732,7 +3730,7 @@ export default function Home() {
               {/* Anchor pricing */}
               <div className="text-center mb-4">
                 <p className="text-sm text-white/60">
-                  Total valor: <span className="line-through">$299 MXN</span> → Tú pagas: <span className="text-emerald-400 font-bold">$149 MXN</span>
+                  Total valor: <span className="line-through">$100 MXN</span> → Tú pagas: <span className="text-emerald-400 font-bold">$49 MXN</span>
                 </p>
               </div>
 
@@ -3748,7 +3746,7 @@ export default function Home() {
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                {isPaying ? 'Procesando...' : 'Desbloquear todo — $149 MXN'}
+                {isPaying ? 'Procesando...' : 'Desbloquear todo — $49 MXN'}
               </button>
 
               {/* Trust badges */}
