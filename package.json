@@ -29,6 +29,7 @@
     "@remotion/renderer": "^4.0.100",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.43.0",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -43,13 +44,12 @@
     "react-markdown": "^10.1.0",
     "remotion": "^4.0.100",
     "stripe": "^20.0.0",
+    "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
     "eslint": "^9",
-    "eslint-config-next": "16.1.6",
-    "tailwindcss": "^4"
+    "eslint-config-next": "16.1.6"
   }
 }
